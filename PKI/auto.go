@@ -15,6 +15,8 @@ var MODTC string=""
 var MODCERTSdir string=""
 var MODCERTSsmdir string=""
 func main() {
+
+
  ex, err := os.Executable()  
  if err != nil {  
  panic(err)  
@@ -27,6 +29,7 @@ MODCERTSsmdir=MODTC+"\\CERTS.txt.sm"
 
 args := os.Args
 
+
 if(len(args)==2){
 	if(args[1]=="init"){
 		fmt.Println("初始化环境完成")
@@ -38,15 +41,19 @@ if(len(args)==2){
 
 if(len(args) >=3){
 	if(args[1]=="revoke"  && len(args)==3){
+	fmt.Println(len(args),args[1],args[2])
+
 		fmt.Println("吊销证书",args[2],"没有指定原因")
 		modrevokecert(args[2],"R","0",getmodtimeNow())
-		os.Exit(0)
+		return
 	}
 
 	if(args[1]=="revoke"  && len(args)==4){
+	fmt.Println(len(args),args[1],args[2],args[3])
+
 		fmt.Println("吊销证书",args[2],"指定原因",args[3])
 		modrevokecert(args[2],"R",args[3],getmodtimeNow())
-		os.Exit(0)
+		return
 	}
 }
 
@@ -92,9 +99,9 @@ func modrevokecert(certid string,certstatus string,certponse string,certtime str
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !strings.HasPrefix(line, "#") {
-			
-			if(line[:len(certid)]==certid){
-				words:= strings.Split(line, " ")
+			words:= strings.Split(line, " ")
+			if(words[0]==certid){
+				
 				if(len(words)==5){
 					newline:=words[0]+" "+ words[1] + " " + certstatus+ " " + certponse + " " + certtime
 					CERTSallData, _ := ioutil.ReadFile(MODCERTSdir)
