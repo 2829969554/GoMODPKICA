@@ -11,7 +11,6 @@ import (
 	"io" 
 	"strconv"
 	"bufio"
-	"crypto/ocsp"
 	"io/ioutil"
 	"crypto/x509"
 	"crypto/x509/pkix"
@@ -19,11 +18,22 @@ import (
 	"time"
 	"encoding/asn1"
 	"encoding/hex"
+	"crypto/sha1" 
 	"os/exec"
 	//"golang.org/x/crypto/ocsp"
+	"crypto/ocsp"  //如果提示没有此包就需要手动复制Go包，详情请查看ReadMe.txt
+	"crypto/rsa"
+	"encoding/base64"  
+	//"go.mozilla.org/pkcs7" 
+	"crypto/x509/pkcs7"//如果提示没有此包就需要手动复制Go包，详情请查看ReadMe.txt
+	"bytes"
 )
 
+
+//*************主线程 main 入口******************************
+
 func main() {
+
  ex, err := os.Executable()  
  if err != nil {  
  panic(err)  
@@ -39,34 +49,44 @@ MODPKI_ROOTGETCRLEXE:=MODTC+"\\rootGETcrl.exe"
 //OCSP签名证书
 MODPKI_OCSPfile:=MODTC+"\\PKI\\OCSP\\ocsp.crt"
 MODPKI_OCSPfilekey:=MODTC+"\\PKI\\OCSP\\ocsp.key"
-
+//时间戳服务
+MODTIMSTAMPdir:=MODTC+"\\PKI\\TIMSTAMP\\"   //时间戳服务根目录
+MODTIMSTAMPlogdir:=MODTIMSTAMPdir+"\\log\\" //时间戳req进 rsa出log日志目录
+TSACERTsha1crt:=MODTIMSTAMPdir+"sha1.crt" 
+TSACERTsha1key:=MODTIMSTAMPdir+"sha1.key"
+TSACERTsha256crt:=MODTIMSTAMPdir+"sha256.crt"
+TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
+//参数配置文件
+MODCONFIG:=MODTC+"\\PKI\\CONFIG.txt"
+//默认端口，具体以配置文件为准
+MODWEBPORT:="80"
 //公开访问目录
 MODWebPublic:=MODTC+"\\PKI\\WebPublic"
 
 
 	// 读取现有OCSP的证书和私钥文件
-	certBytes, err := ioutil.ReadFile(MODPKI_OCSPfile)
+	ocspcertBytes, err := ioutil.ReadFile(MODPKI_OCSPfile)
 	if err != nil {
 		fmt.Println("Error reading OCSP certificate:", err)
 		return
 	}
 
-	keyBytes, err := ioutil.ReadFile(MODPKI_OCSPfilekey)
+	ocspkeyBytes, err := ioutil.ReadFile(MODPKI_OCSPfilekey)
 	if err != nil {
 		fmt.Println("Error reading OCSP key:", err)
 		return
 	}
 
 	// 解析证书和私钥
-	certBlock, _ := pem.Decode(certBytes)
-	ocspcert, err := x509.ParseCertificate(certBlock.Bytes)
+	ocspcertBlock, _ := pem.Decode(ocspcertBytes)
+	ocspcert, err := x509.ParseCertificate(ocspcertBlock.Bytes)
 	if err != nil {
 		fmt.Println("Error parsing  OCSP certificate:", err)
 		return
 	}
 
-	keyBlock, _ := pem.Decode(keyBytes)
-	ocspprivKey, err := x509.ParsePKCS1PrivateKey(keyBlock.Bytes)
+	ocspkeyBlock, _ := pem.Decode(ocspkeyBytes)
+	ocspprivKey, err := x509.ParsePKCS1PrivateKey(ocspkeyBlock.Bytes)
 	if err != nil {
 		fmt.Println("Error parsing OCSP private key:", err)
 		return
@@ -85,8 +105,10 @@ MODWebPublic:=MODTC+"\\PKI\\WebPublic"
 		fmt.Println("Error parsing  ROOT certificate:", err)
 		return
 	}
+//*************主线程 main 代码止 下面是WEB订阅函数******************************
 
 
+//*********************************************************************************
 //HTTP /OCSP在线证书状态协议监听函数
 
 http.HandleFunc("/OCSP", func(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +118,6 @@ if(r.Method!="POST"){
 }
 
 //REQ为OCSP请求的ANS.1编码
-
 REQ,err:=ioutil.ReadAll(r.Body)  
 if err != nil {
 	fmt.Println("OCSP:ERROR ioutil.read")
@@ -124,12 +145,6 @@ if err != nil {
 	return 
 }
 
-
-//res结构体数据参数
-//fmt.Println(res.HashAlgorithm)
-//fmt.Println(res.IssuerNameHash)
-//fmt.Println(res.IssuerKeyHash)
-//fmt.Println(res.SerialNumber)
 
  // 打开证书状态列表 CERTS.txt 
  file, err := os.Open(MODPKI_certsfile)  
@@ -256,9 +271,13 @@ if err != nil {
     return  
 } 
 return
-//*******************
+
 
 })
+
+
+//***********************************************************
+
 
 	//网站目录WebPublic 监听函数
 
@@ -320,17 +339,6 @@ return
 			 	return  
 			 } 
 
-
-
-
-
-
-
-
-
-
-
-
 		 	
 		 } else if os.IsNotExist(err2) {  
 		 	fmt.Fprint(w,"404：访问地址不存在")   
@@ -343,15 +351,177 @@ return
 	})
 
 
+//********时间戳服务端代码******************************
 
-//主线程Main函数
 
-//参数配置文件
-MODCONFIG:=MODTC+"\\PKI\\CONFIG.txt"
-//默认端口，具体以配置文件为准
+//Timstamp时间戳服务器 SHA256签名
+http.HandleFunc("/timstamp", func(w http.ResponseWriter, r *http.Request) {
+	//定义时间戳服务端需要的全局变量
 
-MODWEBPORT:="80"
-// 打开文件  
+	if r.Method != http.MethodPost {
+		w.Write([]byte("欢迎访问MODPKICA系统可信时间戳服务，此接口仅允许POST方式提交数据"))
+		return
+	}
+
+
+	// 读取请求体中的数据
+	data,_:= ioutil.ReadAll(r.Body)
+
+
+	// 读取证书和私钥文件
+	TSAcertPEM, err := ioutil.ReadFile(TSACERTsha256crt)
+	if err != nil {
+		fmt.Println("TSA签名证书加载失败！")	
+		return
+	}
+
+	TSAkeyPEM, err := ioutil.ReadFile(TSACERTsha256key)
+	if err != nil {
+		fmt.Println("TSA签名证书私钥加载失败！")	
+		return
+	}
+
+	// 解码 PEM 格式的证书和私钥
+	TSACRTblock, _ := pem.Decode(TSAcertPEM)
+	if TSACRTblock == nil {
+		http.Error(w, "无法加载TSA专用签名证书", http.StatusInternalServerError)
+		return
+	}
+	TSAcert, err := x509.ParseCertificate(TSACRTblock.Bytes)
+	if err != nil {
+		http.Error(w, "无法解析TSA专用签名证书", http.StatusInternalServerError)
+		return
+	}
+	TSAKEYblock,_:= pem.Decode(TSAkeyPEM)
+	if TSAKEYblock == nil {
+		http.Error(w, "无法加载TSA私钥", http.StatusInternalServerError)
+		return
+	}
+	TSAprivateKey, err := x509.ParsePKCS1PrivateKey(TSAKEYblock.Bytes)
+	if err != nil {
+		http.Error(w, "无法解析TSA私钥", http.StatusInternalServerError)
+		return
+	}
+
+    
+	  // 解码Base64字符串  
+	  data=data[:len(data)-1]
+	  decodedBytes, err := base64.StdEncoding.DecodeString(string(data))  
+	 	if err != nil {  
+		 	fmt.Println("解码失败:", err)  
+		 	return  
+		}
+		//Authenticode
+		data=decodedBytes
+
+    //时间戳请求原始数据
+    data=data[len(data)-512:]
+
+	// 生成 Authenticode 签名 digitype 1 : sha1  2:sha256   3:sha384  4:sha512
+	signature, err := SignAndDetach(data, TSAcert, TSAprivateKey,2)
+	if err != nil {
+		http.Error(w, "签名过程出错", http.StatusInternalServerError)
+		fmt.Println("签名过程出错",err)
+		return
+	}
+	datasha1:=sha1.Sum(data)
+	datasha1hash:=hex.EncodeToString(datasha1[:]) 
+	log.Println("时间戳签名 Authenticode  SHA256 ",datasha1hash)
+	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".req", data, 0644) // 0644 是文件权限
+
+	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".res", signature, 0644)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(signature)
+})
+
+
+//***********************************************************************
+
+//Timstamp时间戳服务器 SHA1签名
+http.HandleFunc("/timstamp/sha1", func(w http.ResponseWriter, r *http.Request) {
+
+	if r.Method != http.MethodPost {
+		w.Write([]byte("欢迎访问MODPKICA系统可信时间戳服务，此接口仅允许POST方式提交数据"))
+		return
+	}
+
+
+	// 读取请求体中的数据
+	data,_:= ioutil.ReadAll(r.Body)
+
+
+	// 读取证书和私钥文件
+	TSAcertPEM, err := ioutil.ReadFile(TSACERTsha1crt)
+	if err != nil {
+		fmt.Println("TSA签名证书加载失败！")	
+		return
+	}
+
+	TSAkeyPEM, err := ioutil.ReadFile(TSACERTsha1key)
+	if err != nil {
+		fmt.Println("TSA签名证书私钥加载失败！")	
+		return
+	}
+
+	// 解码 PEM 格式的证书和私钥
+	TSACRTblock, _ := pem.Decode(TSAcertPEM)
+	if TSACRTblock == nil {
+		http.Error(w, "无法加载TSA专用签名证书", http.StatusInternalServerError)
+		return
+	}
+	TSAcert, err := x509.ParseCertificate(TSACRTblock.Bytes)
+	if err != nil {
+		http.Error(w, "无法解析TSA专用签名证书", http.StatusInternalServerError)
+		return
+	}
+	TSAKEYblock,_:= pem.Decode(TSAkeyPEM)
+	if TSAKEYblock == nil {
+		http.Error(w, "无法加载TSA私钥", http.StatusInternalServerError)
+		return
+	}
+	TSAprivateKey, err := x509.ParsePKCS1PrivateKey(TSAKEYblock.Bytes)
+	if err != nil {
+		http.Error(w, "无法解析TSA私钥", http.StatusInternalServerError)
+		return
+	}
+
+    
+	  // 解码Base64字符串  
+	  data=data[:len(data)-1]
+	  decodedBytes, err := base64.StdEncoding.DecodeString(string(data))  
+	 	if err != nil {  
+		 	fmt.Println("解码失败:", err)  
+		 	return  
+		}
+		//Authenticode
+		data=decodedBytes
+
+    //时间戳请求原始数据
+    data=data[len(data)-512:]
+
+	// 生成 Authenticode 签名 digitype 1 : sha1  2:sha256   3:sha384  4:sha512
+	signature, err := SignAndDetach(data, TSAcert, TSAprivateKey,1)
+	if err != nil {
+		http.Error(w, "签名过程出错", http.StatusInternalServerError)
+		fmt.Println("签名过程出错",err)
+		return
+	}
+	datasha1:=sha1.Sum(data)
+	datasha1hash:=hex.EncodeToString(datasha1[:]) 
+	log.Println("时间戳签名 Authenticode  SHA1 ",datasha1hash)
+	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".req", data, 0644) // 0644 是文件权限
+
+	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".res", signature, 0644)
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Write(signature)
+})
+
+
+
+//********主线程 Main 函数 衔接 上方为视图订阅函数************
+
+
+// 打开文件MODPKICA配置文件
     file, err := os.Open(MODCONFIG)  
     if err != nil {  
         fmt.Println(err)  
@@ -379,18 +549,36 @@ MODWEBPORT:="80"
 
 	fmt.Println("MOD PKI CA Server is running on http://localhost:"+MODWEBPORT)
 	fmt.Println("MOD PKI CA 服务端启动: http://localhost:"+MODWEBPORT)
+	fmt.Println("MOD PKI CA 网页管理端启动: http://localhost:"+MODWEBPORT+"/ADMIN")
+	fmt.Println("MOD PKI CA 颁发者授权信息服务启动: http://localhost:"+MODWEBPORT+"/CRT")
+	fmt.Println("MOD PKI CA 颁发者吊销列表服务启动: http://localhost:"+MODWEBPORT+"/CRL")
+	fmt.Println("MOD PKI CA OCSP服务启动: http://localhost:"+MODWEBPORT+"/OCSP")
+	fmt.Println("MOD PKI CA 时间戳SHA256服务启动: http://localhost:"+MODWEBPORT+"/timstamp")
+	fmt.Println("MOD PKI CA 时间戳SHA1  服务启动: http://localhost:"+MODWEBPORT+"/timstamp/sha1")
+	
 	fmt.Println("MOD PKI CA 监听端口  :"+MODWEBPORT)
 	fmt.Println("如需修改配置请编辑./PKI/CONFIG.txt文件")
 	fmt.Println("本程序作者：@魔帝本尊  QQ：2829969554")
-	fmt.Println("MOD PKI CA SERVER支持x.509 证书管理、CRL吊销列表、OCSP在线状态协议、自动化签发。")
+	fmt.Println("MOD PKI CA SERVER支持x.509 证书管理、CRL吊销列表、时间戳服务器、OCSP在线状态协议、自动化签发。")
 	fmt.Println("本系统仅供学习 x.509 ASN.1编码使用。作者不承担任何由此产生的一切问题。")
+
 	err1 := http.ListenAndServe(":"+MODWEBPORT, nil)
 	if err1 != nil {
-		fmt.Println("Error starting server:", err1)
+		fmt.Println("错误 服务端启动失败:", err1)
 	}
+
 }
 
-//去掉结尾的\r\n
+//********主线程 Main函数 结束**************************************
+
+
+
+
+
+
+//****************自定义函数声明区***********************
+ 
+ //去掉结尾的\n
 func rftrn(s string) string {  
  for len(s) > 0 && s[len(s)-1] == '\n' {  
  s = s[:len(s)-1]  
@@ -404,4 +592,73 @@ func rftrr(s string) string {
  s = s[:len(s)-1]  
  }  
  return s  
+}
+
+
+//Authenticode签名函数
+//MOD变量第四个变量整数 digitype 1 : sha1  2:sha256   3:sha384  4:sha512
+func SignAndDetach(content []byte, cert *x509.Certificate, privkey *rsa.PrivateKey,digitype int) (signed []byte, err error) {
+	toBeSigned, err := pkcs7.NewSignedData(content)
+	if err != nil {
+		err = fmt.Errorf("Cannot initialize signed data: %s", err)
+		return
+	}
+	//扩展信息 自定义目前防止的摘要
+	mtdime:=[]pkcs7.Attribute{
+		pkcs7.Attribute{
+			Type:asn1.ObjectIdentifier{1,2,840,113549,1,7,1},
+			Value:interface{}(content),
+		},
+
+	}
+
+	if(digitype==1){
+	   //sha1
+	   toBeSigned.SetDigestAlgorithm(asn1.ObjectIdentifier{1,3,14,3,2,26})
+	}
+	if(digitype==2){
+	   //sha256
+	   toBeSigned.SetDigestAlgorithm(asn1.ObjectIdentifier{2,16,840,1,101,3,4,2,1})
+	}
+	if(digitype==3){
+	   //sha384
+	   toBeSigned.SetDigestAlgorithm(asn1.ObjectIdentifier{2,16,840,1,101,3,4,2,2})
+	}
+	if(digitype==4){
+		//sha512
+	   toBeSigned.SetDigestAlgorithm(asn1.ObjectIdentifier{2,16,840,1,101,3,4,2,3})
+	}
+
+	if err = toBeSigned.AddSigner(cert, privkey, pkcs7.SignerInfoConfig{ExtraSignedAttributes:mtdime }); err != nil {
+		err = fmt.Errorf("Cannot add signer: %s", err)
+		return
+	}
+	signed, err = toBeSigned.Finish()
+	if err != nil {
+		err = fmt.Errorf("Cannot finish signing data: %s", err)
+		return
+	}
+
+	// Verify the signature
+	pemder:=pem.EncodeToMemory(&pem.Block{Type: "PKCS7", Bytes: signed})
+	p7, err := pkcs7.Parse(signed)
+	if err != nil {
+		err = fmt.Errorf("Cannot parse our signed data: %s", err)
+		return
+	}
+
+	p7.Content = content
+
+	if bytes.Compare(content, p7.Content) != 0 {
+		err = fmt.Errorf("Our content was not in the parsed data:\n\tExpected: %s\n\tActual: %s", content, p7.Content)
+		return
+	}
+	if err = p7.Verify(); err != nil {
+		err = fmt.Errorf("Cannot verify our signed data: %s", err)
+		return
+	}
+	//输出PEM文本格式签名信息 但是不包括头部和尾部
+	pemder=bytes.ReplaceAll(pemder, []byte("\n-----END PKCS7-----"), []byte("\r"))
+	pemder=bytes.ReplaceAll(pemder, []byte("-----BEGIN PKCS7-----\n"), []byte(""))
+	return pemder, nil
 }

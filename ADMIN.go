@@ -55,7 +55,12 @@ if(1==2){
 if(len(MODML)==1){
 	fmt.Println("***************MOD-PKI-CA系统功能列表****************")
 	fmt.Println("init ------------------------------------初始化环境签发根证书ROOT")
+	fmt.Println("                     （执行本操作后将自动化自动执行initOCSP和initTIMSTAMP）")
+	fmt.Println("")
 	fmt.Println("initOCSP --------------------------------初始化OCSP签名专用证书")
+	fmt.Println("initTIMSTAMP ----------------------------初始化TSA时间戳签名专用证书")
+	fmt.Println("            （人工操作，可空参数SHA1 或 SHA256）指定算法更新，默认两者同时更新")
+	fmt.Println("")
 	fmt.Println("list ------------------------------------查看所有证书")
 	fmt.Println("signCERT --------------------------------签发证书")
 	fmt.Println("RevokeCERT ------------------------------吊销证书")
@@ -66,7 +71,7 @@ if(len(MODML)==1){
 	os.Exit(0)
 }
 
-fmt.Println("命令行参数数量:",len(MODML))
+//fmt.Println("命令行参数数量:",len(MODML))
 
 if(MODML[1]=="init"){
 	fmt.Println("初始化新的根证书环境")
@@ -123,13 +128,30 @@ if(MODML[1]=="init"){
 	 output, err := cmd.CombinedOutput()  
 	 if err != nil {  
 		 fmt.Println("命令执行出错:", err)  
-		 return  
-	
-
 	 }  
-	 
 	 // 打印命令的输出结果  
 	 fmt.Println(string(output)) 
+
+	 args=[]string{"initOCSP"}
+	 cmd = exec.Command(MODTC+"\\ADMIN.EXE", args...)  
+	 // 运行命令并等待它完成  
+	 output, err = cmd.CombinedOutput()  
+	 if err != nil {  
+		 fmt.Println("命令执行出错:", err)  
+	 }  
+	 // 打印命令的输出结果  
+	 fmt.Println(string(output))
+
+	 args=[]string{"initTIMSTAMP"}
+	 cmd = exec.Command(MODTC+"\\ADMIN.EXE", args...)  
+	 // 运行命令并等待它完成  
+	 output, err = cmd.CombinedOutput()  
+	 if err != nil {  
+		 fmt.Println("命令执行出错:", err)  
+	 }  
+	 // 打印命令的输出结果  
+	 fmt.Println(string(output))
+
 	os.Exit(0)
 }
 if(MODML[1]=="list" || MODML[1]=="LIST" || MODML[1]=="ls" || MODML[1]=="LS"){
@@ -308,7 +330,55 @@ if(MODML[1]=="initOCSP"){
 	os.Exit(0)
 }
 
+//初始化TIMSTAMP时间戳专用签名证书
+if(MODML[1]=="initTIMSTAMP"){
+	if(len(MODML)==2){
+		 //说明没带参数
+		 // 命令行参数  
+		 args:=[]string{"initTIMSTAMP","SHA1"}  
+		 cmd := exec.Command(MODTC+"\\ADMIN.EXE", args...) 	  
+		 // 运行命令并等待它完成  
+		 outtext,err:=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 } 
 
+		 args=[]string{"initTIMSTAMP","SHA256"}   
+		 cmd = exec.Command(MODTC+"\\ADMIN.EXE", args...) 	  
+		 // 运行命令并等待它完成  
+		 outtext,err=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 } 
+		 
+		return
+	}
+
+	 if(len(MODML)==3){
+		 args:=[]string{"initTIMSTAMP",MODML[2]}  
+	  	 fmt.Println("初始化TSA时间戳签名专用",MODML[2],"证书")
+		 cmd := exec.Command(MODTC+"\\MAKECERT.EXE", args...) 	  
+		 // 运行命令并等待它完成  
+		 outtext,err:=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 }
+
+	 }
+	os.Exit(0)
+}
 
 
 
@@ -319,7 +389,7 @@ if(MODML[1]=="verifyCERT"){
 }
 
 if(MODML[1]=="VERSION" || MODML[1]=="version"  || MODML[1]=="ver"  || MODML[1]=="VER"){
-	fmt.Println("MOD PKI CA:3.0")
+	fmt.Println("MOD PKI CA:3.2")
 	os.Exit(0)
 }
 

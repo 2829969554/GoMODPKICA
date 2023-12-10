@@ -58,6 +58,13 @@ MODAUTOEXE:=MODTC+"\\PKI\\auto.exe"
 MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\" 
 MODPKI_certdir:=MODTC+"\\PKI\\CERT\\" 
 MODPKI_keydir:=MODTC+"\\PKI\\KEY\\" 
+
+MODTIMSTAMPdir:=MODTC+"\\PKI\\TIMSTAMP\\"   //时间戳服务根目录
+TSACERTsha1crt:=MODTIMSTAMPdir+"sha1.crt" 
+TSACERTsha1key:=MODTIMSTAMPdir+"sha1.key"
+TSACERTsha256crt:=MODTIMSTAMPdir+"sha256.crt"
+TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
+
     // 打开配置文件  
     file, err := os.Open(MODCONFIG)  
     if err != nil {  
@@ -139,7 +146,7 @@ if keyblock == nil || keyblock.Type != "RSA PRIVATE KEY" {
 
   
 var certkeybit int
-if(MODML[1]=="initOCSP"){
+if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
    certkeybit=2048
 }else{
     certkeybit,err=strconv.Atoi(MODML[2]) 
@@ -152,7 +159,7 @@ if(MODML[1]=="initOCSP"){
         certkeybit=1024
     }
  roothash :=MODx509.SignatureAlgorithm
-if(MODML[1] != "initOCSP"){
+if(MODML[1] != "initOCSP" && MODML[1] != "initTIMSTAMP"){
     switch MODML[3] {  
     case "sha1":  
         roothash=3
@@ -178,7 +185,7 @@ if(MODML[1] != "initOCSP"){
   //解析传递过来的命令[1]    
  for _, substring := range substrings { 
 
-        if(MODML[1] == "initOCSP"){
+        if(MODML[1] == "initOCSP" || MODML[1] == "initTIMSTAMP"){
             break
         } 
      // 使用等号分隔子字符串  
@@ -246,13 +253,24 @@ if(MODML[1] != "initOCSP"){
  //MOD密钥位数
  MODKbit:=certkeybit
 
-if(MODML[1]=="initOCSP"){
+if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
+
     MODKbit=2048 
     roothash=3
     MODname = pkix.Name{} 
-    MODname.CommonName = rootcert.Subject.CommonName+"By OCSP"
+    MODname.CommonName = rootcert.Subject.CommonName+" By OCSP"
     MODname.Organization=rootcert.Subject.Organization
     MODname.OrganizationalUnit= []string{"Only OCSP Signing"} 
+    if(MODML[1] == "initTIMSTAMP" && MODML[2] == "SHA1"){
+        roothash=3
+        MODname.OrganizationalUnit= []string{"Only TSA SHA1 Signing"} 
+        MODname.CommonName = rootcert.Subject.CommonName+" By Timstamp SHA1"
+    }
+    if(MODML[1] == "initTIMSTAMP" && MODML[2] == "SHA256"){
+        roothash=4
+        MODname.OrganizationalUnit= []string{"Only TSA SHA256 Signing"} 
+        MODname.CommonName = rootcert.Subject.CommonName+" By Timstamp SHA256"
+    }
 }
 
  // 生成RSA密钥对  
@@ -336,7 +354,7 @@ MODuseip:=[]net.IP{
     //CA一般为1|2|32|64,
     //用户证书SSL 为1|4|8|16
  MODx509.KeyUsage=1|4|8|16
- if(MODML[1]=="initOCSP"){
+ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     MODx509.KeyUsage=1
  }
  MODyongtu:=MODx509.KeyUsage
@@ -358,6 +376,9 @@ MODuseip:=[]net.IP{
  MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{1,2,3,4,13}
  if(MODML[1]=="initOCSP"){
     MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{9}
+ }
+ if(MODML[1]=="initTIMSTAMP"){
+    MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{8}
  }
  MODjiaqiangyongfa:=MODx509.ExtKeyUsage
  //MOD证书策略 
@@ -394,7 +415,7 @@ MODuseip:=[]net.IP{
  fmt.Println("解析时间错误:", err)  
  return  
  } 
-if(MODML[1]=="initOCSP"){
+if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     MODUnknownExtKeyUsage = []asn1.ObjectIdentifier{}
     MODatime=time.Now()
     MODbtime=time.Now().Add(time.Hour * 24 * 365)
@@ -528,6 +549,32 @@ if(MODML[1]=="initOCSP"){
  fmt.Println("cert证书生成失败：", err)  
  return  
  }  
+
+if(MODML[1]=="initTIMSTAMP" && MODML[2]=="SHA1"){
+     // 将证书保存到文件  
+     certOut, err := os.Create(TSACERTsha1crt)  
+     if err != nil {  
+     fmt.Println("SHA1 TSA签名专用证书无法创建证书文件：", err)  
+     return  
+     }  
+     pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certderBytes})  
+     certOut.Close()  
+     fmt.Println("SHA1 TSA专用证书生成成功！")  
+      savePrivateKey(certprivateKey,TSACERTsha1key)
+}
+if(MODML[1]=="initTIMSTAMP" && MODML[2]=="SHA256"){
+     // 将证书保存到文件  
+     certOut, err := os.Create(TSACERTsha256crt)  
+     if err != nil {  
+     fmt.Println("SHA256 TSA签名专用证书无法创建证书文件：", err)  
+     return  
+     }  
+     pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certderBytes})  
+     certOut.Close()  
+     fmt.Println("SHA256 TSA专用证书生成成功！")  
+      savePrivateKey(certprivateKey,TSACERTsha256key)
+}
+
 if(MODML[1]=="initOCSP"){
      // 将证书保存到文件  
      certOut, err := os.Create(MODTC+"\\PKI\\OCSP\\ocsp.crt")  
@@ -539,36 +586,45 @@ if(MODML[1]=="initOCSP"){
      certOut.Close()  
      fmt.Println("OCSP专用证书生成成功！")  
       savePrivateKey(certprivateKey,MODTC+"\\PKI\\OCSP\\ocsp.key")
-}else{
+}
+if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP"){
      // 将证书保存到文件  
      certOut, err := os.Create(MODPKI_certdir+template.SerialNumber.Text(16)+".crt")  
      if err != nil {  
-     fmt.Println("cert无法创建证书文件：", err)  
+     fmt.Println("用户证书CRT无法创建证书文件：", err)  
      return  
      }  
      pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certderBytes})  
      certOut.Close()  
-     fmt.Println("cert证书生成成功！")  
- 
+     fmt.Println("用户证书CRT证书生成成功！")  
 }
+
+ 
+
 
 
 
  // 将证书保存到文件  
  certOut2, err := os.Create(MODTC+"\\PKI\\WebPublic\\CRT\\"+template.SerialNumber.Text(16)+".crt")  
  if err != nil {  
- fmt.Println("web cert无法创建证书文件：", err)  
+ fmt.Println("WebPublic证书副本无法创建证书文件：", err)  
  return  
  }  
  pem.Encode(certOut2, &pem.Block{Type: "CERTIFICATE", Bytes: certderBytes})  
  certOut2.Close()  
- fmt.Println("web cert证书生成成功！")  
+ fmt.Println("WebPublic证书副本生成成功！")  
 
- savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
-ags:=[]string {"newcert",template.SerialNumber.Text(16),"R", "V","0",}
+    savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
+    ags:=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0"}
 
     cmd3:=exec.Command(MODAUTOEXE, ags...)  
-    cmd3.CombinedOutput() 
+    outtext,err:=cmd3.CombinedOutput() 
+    if err != nil {
+        fmt.Println("添加数据出错了")
+    }
+    if(string(outtext)!=""){
+        fmt.Println(string(outtext))
+    }
 
 
 
