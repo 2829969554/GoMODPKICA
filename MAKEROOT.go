@@ -274,7 +274,7 @@ MODuseip:=[]net.IP{
  //11   ExtKeyUsageNetscapeServerGatedCrypto
  //12   ExtKeyUsageMicrosoftCommercialCodeSigning
  //13   ExtKeyUsageMicrosoftKernelCodeSigning
- MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{0}
+ MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{}
  MODjiaqiangyongfa:=MODx509.ExtKeyUsage
  //MOD证书策略 
  MODPolicyIdentifiers := []asn1.ObjectIdentifier{
@@ -289,11 +289,11 @@ MODuseip:=[]net.IP{
  //MOD添加其他增强型密钥用法 补充
  MODUnknownExtKeyUsage := []asn1.ObjectIdentifier{
    // asn1.ObjectIdentifier{1,3,6,1,5,5,7,2,1},
-     {1,3,6,1,4,1,311,10,3,5},  //windows硬件驱动验证
+  /*   {1,3,6,1,4,1,311,10,3,5},  //windows硬件驱动验证
      {1,3,6,1,4,1,311,10,3,6},  //windows系统组件验证
      {1,3,6,1,4,1,311,10,3,7},  //OEMwindows系统组件验证
      {1,3,6,1,4,1,311,10,3,8},  //内嵌windows系统组件验证
-
+*/
  } 
 
  //******************************

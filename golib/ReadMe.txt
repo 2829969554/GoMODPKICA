@@ -22,6 +22,20 @@
 第三.需要将文件夹pkcs7复制到%GO_HOME%\src\crypto\x509\目录下，
 	此目录下原本应该没有pkcs7文件夹，其他go版本如果有那我也不知道能不能替换。
 	
-	这是编译时间戳服务相关服务必要的GO包
+	这是编译时间戳服务Authenticode相关服务必要的GO包
 	我的版本go version go1.20.3 windows/amd64 
 	# 2023/12/10 14:33 编写
+	
+第四.需要将文件x509.go复制到%GO_HOME%\src\crypto\x509\目录下，
+	此目录下原本有x509.go文件，但是它默认把sha1哈希算法禁用了 ，我为了启用SHA1就把他部分代码屏蔽了 
+	其他go版本如果有那我也不知道能不能替换。
+	我的版本go version go1.20.3 windows/amd64 
+	# 2023/12/12 20:40 编写
+	
+	
+第五.需要将文件夹timestamp复制到%GO_HOME%\src\crypto\目录下，
+	此目录下原本应该没有timestamp文件夹，其他go版本如果有那我也不知道能不能替换。
+	
+	这是编译时间戳服务RFC3161相关服务必要的GO包
+	我的版本go version go1.20.3 windows/amd64 
+	# 2023/12/12 20:40 编写

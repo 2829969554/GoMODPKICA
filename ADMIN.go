@@ -269,10 +269,10 @@ if(MODML[1]=="RevokeCERT"){
 	 // 命令行参数  
 	 var args []string
 	 if(len(MODML)==3){
-	 	args=[]string{"revoke",MODML[2],"0",}  
+	 	args=[]string{"revoke",MODML[2],"0"}  
 	 }
 	 if(len(MODML)==4){
-	 	args=[]string{"revoke", MODML[2], MODML[3],}  
+	 	args=[]string{"revoke", MODML[2], MODML[3]}  
 	 }
 	 
 	  

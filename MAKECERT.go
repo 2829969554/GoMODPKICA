@@ -471,7 +471,10 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     PermittedDNSDomains:[]string{"q1.com"},//新规：严格允许域名使用 默认不启用
     ExcludedDNSDomains:[]string{"q2.com"},// 新规：严格禁止子域名使用 默认不启用
     */
-}  
+}
+
+
+
     /*
     // 创建一个CT预证书扩展
     ctyExtension := pkix.Extension{
@@ -523,6 +526,12 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
         Critical: false,
         Value:    []byte{0x02,0x01,0x03},
     }
+     // 创建一个关键增强型密钥用法扩展 时间戳专用
+    modgjExtension := pkix.Extension{
+        Id:       asn1.ObjectIdentifier{2, 5, 29,37},
+        Critical: true,
+        Value:[]byte{0x30,0x0A,0x06,0x08,0x2B,0x06,0x01,0x05,0x05,0x07,0x03,0x08},
+    }
     //MOD加入x509扩展
     template.ExtraExtensions = []pkix.Extension{
         caverExtension,
@@ -542,7 +551,17 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
         //cpsExtension,
         }
     }
-
+if(MODML[1]=="initTIMSTAMP"){
+    template.ExtraExtensions = []pkix.Extension{
+        caverExtension,
+        modgjExtension,
+        //ctyExtension,
+        //ctExtension,
+        //noocspExtension,
+        //ocspmustExtension,
+        //cpsExtension,
+        }
+} 
  // 使用证书模板和RSA密钥对生成证书  
  certderBytes, err := x509.CreateCertificate(rand.Reader, &template, rootcert, &certprivateKey.PublicKey, rootkey)  
  if err != nil {  

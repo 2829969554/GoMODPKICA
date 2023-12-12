@@ -43,7 +43,7 @@ if(len(args) >=3){
 	if(args[1]=="revoke"  && len(args)==3){
 	fmt.Println(len(args),args[1],args[2])
 
-		fmt.Println("吊销证书",args[2],"没有指定原因")
+		//fmt.Println("吊销证书",args[2],"没有指定原因")
 		modrevokecert(args[2],"R","0",getmodtimeNow())
 		return
 	}
@@ -51,7 +51,7 @@ if(len(args) >=3){
 	if(args[1]=="revoke"  && len(args)==4){
 	fmt.Println(len(args),args[1],args[2],args[3])
 
-		fmt.Println("吊销证书",args[2],"指定原因",args[3])
+		//fmt.Println("吊销证书",args[2],"指定原因",args[3])
 		modrevokecert(args[2],"R",args[3],getmodtimeNow())
 		return
 	}
