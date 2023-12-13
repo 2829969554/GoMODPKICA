@@ -218,7 +218,7 @@ MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\"
  // 签发日期
  modqianfaTime := "2001-07-19 15:30:00"  
  //过期时间
- modguoqiTime := "2033-07-19 15:30:00"  
+ modguoqiTime := "2099-07-19 15:30:00"  
 
 //MOD授权者信息
 MODissureocsp:=[]string{MODSUOCSP}

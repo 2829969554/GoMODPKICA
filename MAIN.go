@@ -29,7 +29,7 @@ import (
 	"bytes"
 	"math/big"
     "crypto"
-    "crypto/timestamp" 
+    "crypto/timestamp"   
 )
 
 
@@ -289,7 +289,11 @@ return
 	
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		 filePath := r.URL.String() 
-
+		 if(filePath=="/ocsp" || filePath=="/ocsp/"  || filePath=="/OCSP/"){
+		 	 w.Header().Set("Location", "/OCSP")  
+			 w.WriteHeader(http.StatusMovedPermanently)
+			 return
+		 }
 		 //不带参数
 		 if(filePath=="/"){
 		 	fmt.Fprint(w,"欢迎访问 MOD PKI CA 基础服务页面。")  
@@ -327,20 +331,17 @@ return
 			 	log.Fatal(err4)  
 			 }  
 			 fileSize := strconv.FormatInt(int64(fileInfo.Size()), 10)   
-			 fileType := http.DetectContentType([]byte(file.Name())) 
 			 wenjianhouzhui:=file.Name()
 			 wenjianhouzhui=wenjianhouzhui[len(wenjianhouzhui)-3:]
-			 log.Println("URL", r.URL) 
-			 log.Println("File type:", fileType)  
-			 log.Println("File size:", fileSize)  
-			 log.Println("File",file.Name()) 
 			 w.Header().Set("Content-Disposition", "attachment; filename="+filepath.Base(filePath))  
 			w.Header().Set("Content-Type", "application/octet-stream")
 			if(wenjianhouzhui=="crl"){
 				w.Header().Set("Content-Type", "application/pkix-crl")
+				log.Println("授权信息访问 CRL分发点 URL", r.URL)
 			}
 			if(wenjianhouzhui=="crt"){
 				w.Header().Set("Content-Type", "application/pkix-cert")
+				log.Println("授权信息访问 证书颁发机构颁发者 URL", r.URL)
 			}
 			
 
@@ -374,6 +375,11 @@ http.HandleFunc("/timestamp", func(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != http.MethodPost {
 		w.Write([]byte("欢迎访问MODPKICA系统可信时间戳服务，此接口仅允许POST方式提交数据"))
+		return
+	}
+	reqtype:=r.Header.Get("Content-Type")
+	if(reqtype == "application/timestamp-query"){
+		handleTimestampRequest(w,r)
 		return
 	}
 
@@ -453,6 +459,7 @@ http.HandleFunc("/timestamp", func(w http.ResponseWriter, r *http.Request) {
 	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".res", signature, 0644)
 	//w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Type", "application/timestamp-reply") 
+	w.Header().Set("Content-Length",  strconv.Itoa(len(signature))) 
 	w.Write(signature)
 })
 
@@ -466,7 +473,11 @@ http.HandleFunc("/timestamp/sha1", func(w http.ResponseWriter, r *http.Request) 
 		w.Write([]byte("欢迎访问MODPKICA系统可信时间戳服务，此接口仅允许POST方式提交数据"))
 		return
 	}
-
+	reqtype:=r.Header.Get("Content-Type")
+	if(reqtype == "application/timestamp-query"){
+		handleTimestampRequest(w,r)
+		return
+	}
 
 	// 读取请求体中的数据
 	data,_:= ioutil.ReadAll(r.Body)
@@ -541,6 +552,7 @@ http.HandleFunc("/timestamp/sha1", func(w http.ResponseWriter, r *http.Request) 
 	ioutil.WriteFile(MODTIMSTAMPlogdir+datasha1hash+".res", signature, 0644)
 	//w.Header().Set("Content-Type", "application/octet-stream")
 	w.Header().Set("Content-Type", "application/timestamp-reply") 
+	w.Header().Set("Content-Length",  strconv.Itoa(len(signature))) 
 	w.Write(signature)
 })
 
@@ -865,6 +877,7 @@ TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
     ioutil.WriteFile(MODTIMSTAMPlogdir+"rfc3161"+datasha1hash+".req", reqbody, 0644) // 0644 是文件权限
     ioutil.WriteFile(MODTIMSTAMPlogdir+"rfc3161"+datasha1hash+".res", timestampa, 0644) // 0644 是文件权限
     w.Header().Set("Content-Type", "application/timestamp-reply")  
+    w.Header().Set("Content-Length",  strconv.Itoa(len(timestampa))) 
     w.Write(timestampa)  
       
 }

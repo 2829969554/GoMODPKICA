@@ -1,6 +1,28 @@
 package main  
   //配置文件位于PKI\CONFIG.txt
   //MODCA2     2023/12/6 19:07
+  /* 签发用户证书 subname 参数1(格式:key:value 分隔符:,)   
+    可填null空   keybit  参数2(格式:4096 例子:1024|2048|4096|8192) 
+    可填null空   hash    参数3(格式:sha1 例子:sha1|sha256|sha384|sha512|...)
+    可填null空   usage   参数4(格式:1 例子:1.用户证书 2.中间CA 3.仅用于加密证书 4.仅用于解密证书)
+                              中间CA一般为1,2,32,64 | 用户证书为1,4,8,16 |3.只能加密128|4.只能解密256
+     可填null空  exusage 参数5(格式:1,2,3 分隔符:, 例子:0,1,2,3,4,5,6,7,8,9,10,11,12,13)
+     可填null空  type    参数6(格式:0 例子:0或1;0:用户证书 1:为中间CA;可空默认为0)
+     可填null空  time    参数7(格式1:1 例子:以当前日期为起点计算1年,可以填30,代表30年。默认为1)
+                              (格式2:2015/12/08-21:18:57T2025/12/08-21:18:57 分隔符:T 例子:时间按照这种格式指定有效)
+     可填null空  URLS    参数8(格式:abc.com 分隔符:, 例子:abc.com,aaa.com,bbb.com多域名SSL可选)
+     可填null空  IP      参数9(格式:192.168.101.100 分隔符:,例子:192.168.101.100,192.168.102.102,192.168.103.103多IP SSL可选)
+     可填null空  Kernel  参数10(格式:1或者null 如果是1则加入windwos内核签名用法)
+例如全null 命令:makecert CN=test null null null null null null null null null
+                全null 意思是生成一个CN为test的sha1的1024位的全功能用户证书（无增强密钥用法）无特定用法，有效期1年支持吊销
+例如SSL域名 makecert CN=test.com 2048 sha256 0 1,2 0 1 test.com null
+            这行意思是生成一个2048位sha256的用户DV 域名 SSL证书 全功能，增强用法是服务器验证客户端验证 有效期1年
+           makecert CN=127.0.0.1 2048 sha256 0 1,2 0 1 null 127.0.0.1 null
+           这行意思是生成一个2048位sha256的用户DV IP SSL证书 全功能，增强用法是服务器验证客户端验证 有效期1年
+例如代码签名 EV代码签名 makecert CN=我是EV证书,O=中国公司,OU=研发部,EVCT=CN,EVCITY=BEIJING,EVTYPE=PrivateBank 2048 sha256 0 3 0 1 null null 1
+            带有EV扩展标识支持驱动
+            。。。。扩展性很强。。这里就不举例子了
+             */
 import (  
  "crypto/rand"  
  "crypto/rsa"  
@@ -300,12 +322,38 @@ if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
  //证书序列号
  CERTID:=time.Now().Unix()
  //使用者证书类型 true为CA，false为最终实体
+
  CertIsCA:=false
  // 签发日期
- modqianfaTime := "2023/12/08-21:18:57"
+ modqianfaTime := "2011/12/08-21:18:57"
  //过期时间
  modguoqiTime := "2051/01/02-15:04:05"  
+ if(len(MODML)>=7){
+   if(MODML[6]=="1"){
+        CertIsCA=true//设置为中间CA,默认为0
+   }  
+   if(len(MODML)==8){
+    txtime:=MODML[7]
+        if(len(txtime)<5){
+            qishin:=1
+            if(txtime!="null"){
+                qishin,err=strconv.Atoi(txtime)
+                if err != nil {
+                    qishin=1
+                }
+            }
+            modqianfaTime = time.Now().Format("2006/01/02-15:04:05")
+            modguoqiTime=time.Now().Add(time.Hour * 24 * 365 * time.Duration(qishin)).Format("2006/01/02-15:04:05")
+        }else{
+            result := strings.Split(txtime,"T")  
+            if(len(result)==2){
+               modqianfaTime=result[0] 
+               modguoqiTime=result[1] 
+            }
+        }
 
+   }
+ }
 //MOD授权者信息
 MODissureocsp:=[]string{MODSUOCSP}
 MODissurecrt:=[]string{MODSUCRT}
@@ -314,11 +362,50 @@ MODissurecrl:=[]string{MODSUCRL}
 MODuseyuming:=[]string{
     //"qq.com"
 }
+//加入使用者可选遍历多个域名
+if(len(MODML)>=9){
+    ymlist:=MODML[8]
+    if(ymlist!="null"){
+         if strings.Contains(ymlist, ",") {  
+            //存在分隔符 *****************
+            ymlistrow:=strings.Split(ymlist,",") 
+            for _, substring := range ymlistrow {
+                MODuseyuming=append(MODuseyuming,substring) 
+            }
+
+            //************************
+         } else {  
+            //不存在分割符
+            MODuseyuming=append(MODuseyuming,ymlist)  
+         }  
+    }
+}
+//当前邮箱加入使用者可选标识符
 MODuseemail:=[]string{
-    //"2829969554@qq.com"
+}
+if(MODname.EMAIL != nil){
+    MODuseemail=append(MODuseemail,MODname.EMAIL[0])
 }
 MODuseip:=[]net.IP{
    // net.ParseIP("192.168.1.101")
+}
+//加入使用者可选遍历ip
+if(len(MODML)>=10){
+    iplist:=MODML[9]
+    if(iplist!="null"){
+         if strings.Contains(iplist, ",") {  
+            //存在分隔符 *****************
+            iplistrow:=strings.Split(iplist,",") 
+            for _, substring := range iplistrow {
+                MODuseip=append(MODuseip,net.ParseIP(substring)) 
+            }
+
+            //************************
+         } else {  
+            //不存在分割符
+            MODuseip=append(MODuseip,net.ParseIP(iplist))  
+         }  
+    }
 }
 
     //RSA
@@ -351,9 +438,30 @@ MODuseip:=[]net.IP{
       //256  x509.KeyUsageDecipherOnly
       //CA一般为1|2|32|64,
       //用户证书SSL 为1|4|8|16
-    //CA一般为1|2|32|64,
-    //用户证书SSL 为1|4|8|16
- MODx509.KeyUsage=1|4|8|16
+ MODx509.KeyUsage=1|2|4|8|16
+ if(CertIsCA==true){
+    MODx509.KeyUsage=1|2|32|64
+}else{
+    if(len(MODML)>=5){
+        if(MODML[4]=="1"){
+            //用户证书
+            MODx509.KeyUsage=1|2|4|8|16
+        }
+        if(MODML[4]=="2"){
+            //CA证书
+            MODx509.KeyUsage=1|2|32|64
+        }
+        if(MODML[4]=="3"){
+            //用户证书 仅用于加密 签名
+            MODx509.KeyUsage=1|2|128
+        }
+        if(MODML[4]=="4"){
+            //用户证书 仅用于解密 签名
+            MODx509.KeyUsage=1|2|256
+        }
+    }
+}
+
  if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     MODx509.KeyUsage=1
  }
@@ -373,7 +481,34 @@ MODuseip:=[]net.IP{
  //11   ExtKeyUsageNetscapeServerGatedCrypto
  //12   ExtKeyUsageMicrosoftCommercialCodeSigning
  //13   ExtKeyUsageMicrosoftKernelCodeSigning
- MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{1,2,3,4,13}
+ MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{}
+ nums := make([]int, 0) 
+ //获取增强型密钥用法多个
+ if(len(MODML)>=6){
+    exoid:=MODML[5]
+    if(exoid != "null"){
+        if strings.Contains(exoid, ","){
+            oidlistrow:=strings.Split(exoid, ",")
+            for _, danduoid := range oidlistrow {
+                num, _ := strconv.Atoi(danduoid)
+                nums = append(nums, num)
+            }
+        }else{
+             num, err := strconv.Atoi(exoid)  
+             if err != nil {  
+                 num=0
+             }  
+             
+             nums = append(nums, num) 
+        }
+    }
+
+ }
+ xxxextKeyUsage := make([]x509.ExtKeyUsage, len(nums)) 
+ for i, num := range nums {  
+    xxxextKeyUsage[i] = x509.ExtKeyUsage(num)  
+ }  
+ MODx509.ExtKeyUsage=xxxextKeyUsage
  if(MODML[1]=="initOCSP"){
     MODx509.ExtKeyUsage=[]x509.ExtKeyUsage{9}
  }
@@ -389,18 +524,31 @@ MODuseip:=[]net.IP{
     //{1,3,6,1,5,5,7,2,2}, //为用户通告标识符
 
  }  
+if(CertIsCA==true){
+ MODPolicyIdentifiers = []asn1.ObjectIdentifier{
+    {2,23,140,1,3},//EV扩展代码签名证书
+    {2,23,140,1,1},         //EV扩展域名证书
+    {2,5,29,32,0},  //所有颁发策略
+    {1,3,6,1,4,1,311,10,12,1}, //所有应用策略
 
+ }  
+}
 
  //MOD添加其他增强型密钥用法 补充
  MODUnknownExtKeyUsage := []asn1.ObjectIdentifier{
+ } 
+if(len(MODML)>=11){
+    if(MODML[10]=="1"){
+ MODUnknownExtKeyUsage = []asn1.ObjectIdentifier{
    // asn1.ObjectIdentifier{1,3,6,1,5,5,7,2,1},
      {1,3,6,1,4,1,311,10,3,5},  //windows硬件驱动验证
      {1,3,6,1,4,1,311,10,3,6},  //windows系统组件验证
      {1,3,6,1,4,1,311,10,3,7},  //OEMwindows系统组件验证
      {1,3,6,1,4,1,311,10,3,8},  //内嵌windows系统组件验证
 
- } 
-
+ }  
+    }
+}
  //******************************
  // 定义时间格式  不用动我
  modlayout := "2006/01/02-15:04:05"  
@@ -417,7 +565,7 @@ MODuseip:=[]net.IP{
  } 
 if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     MODUnknownExtKeyUsage = []asn1.ObjectIdentifier{}
-    MODatime=time.Now()
+    MODatime=time.Now()// "2006/01/02-15:04:05" 
     MODbtime=time.Now().Add(time.Hour * 24 * 365)
 } 
 //*********************************
@@ -635,7 +783,9 @@ if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP"){
 
     savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
     ags:=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0"}
-
+    if(CertIsCA==true){
+      ags=[]string {"newcert",template.SerialNumber.Text(16),"C", "V","0"}  
+    }
     cmd3:=exec.Command(MODAUTOEXE, ags...)  
     outtext,err:=cmd3.CombinedOutput() 
     if err != nil {
