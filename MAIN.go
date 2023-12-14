@@ -240,10 +240,10 @@ suijiNonce:=pkix.Extension{
  ocspResp := ocsp.Response{  
 	 RevocationReason:Cponse,
 	 SignatureAlgorithm:x509.SHA256WithRSA,
-	 ProducedAt:time.Now(),
-	 ThisUpdate:time.Now(),
-	 NextUpdate:time.Now().Add(10 * time.Minute),
-	 RevokedAt:Ctime,
+	 ProducedAt:time.Now().UTC(),
+	 ThisUpdate:time.Now().UTC(),
+	 NextUpdate:time.Now().UTC().Add(10 * time.Minute),
+	 RevokedAt:Ctime.UTC(),
 	 IssuerHash:0,
 	 Extensions:[]pkix.Extension{suijiNonce},
 	 ExtraExtensions:[]pkix.Extension{suijiNonce},
@@ -828,7 +828,7 @@ TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
     Duration,_:=time.ParseDuration("1s")
     //response.RawToken=encodedToken + signature
     response.HashedMessage=parsedRequest.HashedMessage
-    response.Time=resthistime
+    response.Time=resthistime.UTC()
     response.HashAlgorithm=parsedRequest.HashAlgorithm
     response.Accuracy=Duration 
     response.Nonce=parsedRequest.Nonce

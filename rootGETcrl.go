@@ -120,7 +120,7 @@ if keyblock == nil || keyblock.Type != "RSA PRIVATE KEY" {
               
                  revokedCert := pkix.RevokedCertificate{  
                      SerialNumber:   big.NewInt(int64(num)),  
-                     RevocationTime: parsedTime,  
+                     RevocationTime: parsedTime.UTC(),  
                      Extensions: []pkix.Extension{  
                          {  
                          Id: asn1.ObjectIdentifier{2, 5, 29, 21},  
@@ -157,7 +157,7 @@ if keyblock == nil || keyblock.Type != "RSA PRIVATE KEY" {
 
 
  // 生成证书吊销列表（CRL）的签名请求（CSN）  
- csn, err := cert.CreateCRL(rand.Reader, key,MODCERTLIST, time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour)) // 假设吊销时间为24小时前到当前时间之间  
+ csn, err := cert.CreateCRL(rand.Reader, key,MODCERTLIST, time.Now().UTC().Add(-24*time.Hour), time.Now().UTC().Add(24*time.Hour)) // 假设吊销时间为24小时前到当前时间之间  
  
  if err != nil {  
  fmt.Println("无法创建CRL签名请求：%v", err)  

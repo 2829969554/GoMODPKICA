@@ -331,8 +331,8 @@ MODuseip:=[]net.IP{
      EVCITY:      []string{"BEIJING"},
      EVCT:      []string{"CN"},
  }, */ 
-     NotBefore: MODatime, // 证书生效时间  
-     NotAfter:  MODbtime, // 证书过期时间，这里设置为1年后的今天  
+     NotBefore: MODatime.UTC(), // 证书生效时间  
+     NotAfter:  MODbtime.UTC(), // 证书过期时间，这里设置为1年后的今天  
      
 
   //1    x509.KeyUsageDigitalSignature

@@ -332,7 +332,7 @@ if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
    if(MODML[6]=="1"){
         CertIsCA=true//设置为中间CA,默认为0
    }  
-   if(len(MODML)==8){
+   if(len(MODML)>=8){
     txtime:=MODML[7]
         if(len(txtime)<5){
             qishin:=1
@@ -342,8 +342,8 @@ if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
                     qishin=1
                 }
             }
-            modqianfaTime = time.Now().Format("2006/01/02-15:04:05")
-            modguoqiTime=time.Now().Add(time.Hour * 24 * 365 * time.Duration(qishin)).Format("2006/01/02-15:04:05")
+            modqianfaTime = time.Now().UTC().Format("2006/01/02-15:04:05")
+            modguoqiTime=time.Now().UTC().Add(time.Hour * 24 * 365 * time.Duration(qishin)).Format("2006/01/02-15:04:05")
         }else{
             result := strings.Split(txtime,"T")  
             if(len(result)==2){
@@ -575,8 +575,8 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
  template := x509.Certificate{  
      SerialNumber: big.NewInt(CERTID),  
      Subject: MODname,
-     NotBefore: MODatime, // 证书生效时间  
-     NotAfter:  MODbtime, // 证书过期时间
+     NotBefore: MODatime.UTC(), // 证书生效时间  
+     NotAfter:  MODbtime.UTC(), // 证书过期时间
      
      KeyUsage:MODyongtu, // 密钥用途 
      
