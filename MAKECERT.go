@@ -13,6 +13,7 @@ package main
      可填null空  URLS    参数8(格式:abc.com 分隔符:, 例子:abc.com,aaa.com,bbb.com多域名SSL可选)
      可填null空  IP      参数9(格式:192.168.101.100 分隔符:,例子:192.168.101.100,192.168.102.102,192.168.103.103多IP SSL可选)
      可填null空  Kernel  参数10(格式:1或者null 如果是1则加入windwos内核签名用法)
+     可填null空  Issure  参数11(颁发者序列号)
 例如全null 命令:makecert CN=test null null null null null null null null null
                 全null 意思是生成一个CN为test的sha1的1024位的全功能用户证书（无增强密钥用法）无特定用法，有效期1年支持吊销
 例如SSL域名 makecert CN=test.com 2048 sha256 0 1,2 0 1 test.com null
@@ -78,6 +79,7 @@ MODAUTOEXE:=MODTC+"\\PKI\\auto.exe"
 //MODrootGETcrl:=MODTC+"\\rootGETcrl.exe"
 //特定目录
 MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\" 
+MODPKI_cadir:=MODTC+"\\PKI\\CA\\" 
 MODPKI_certdir:=MODTC+"\\PKI\\CERT\\" 
 MODPKI_keydir:=MODTC+"\\PKI\\KEY\\" 
 
@@ -119,15 +121,32 @@ TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
 
 
 //MOD 解码颁发者证书和颁发者私钥
+banfazheid:="root"
+banfazhepath:=""
+if(len(MODML)>=12){
+    banfazheid=MODML[11]
+}
+if(banfazheid!="root"){
+    _, err := os.Stat(MODPKI_cadir+banfazheid+".crt") 
+    if os.IsNotExist(err) {  
+        //不存在
+       banfazhepath= MODPKI_rootdir+"root"
+     } else {  
+        //存在
+         banfazhepath= MODPKI_cadir+banfazheid
+     }  
+}else{
+   banfazhepath= MODPKI_rootdir+"root" 
+}
 
  // 读取证书文件  
- rootPEM, err := ioutil.ReadFile(MODPKI_rootdir+"root.crt")  
+ rootPEM, err := ioutil.ReadFile(banfazhepath+".crt")  
  if err != nil {  
  log.Fatalf("无法读取证书文件：%v", err)  
  }  
  //fmt.Println(string(certPEM))
  // 读取私钥文件  
- rootkeyPEM, err := ioutil.ReadFile(MODPKI_rootdir+"root.key")  
+ rootkeyPEM, err := ioutil.ReadFile(banfazhepath+".key")  
  if err != nil {  
  log.Fatalf("无法读取私钥文件：%v", err)  
  }  
@@ -355,6 +374,8 @@ if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
    }
  }
 //MOD授权者信息
+MODSUCRT=strings.Replace(MODSUCRT, "{CID}", rootcert.SerialNumber.Text(16), -1)
+MODSUCRL=strings.Replace(MODSUCRL, "{CID}", rootcert.SerialNumber.Text(16), -1)
 MODissureocsp:=[]string{MODSUOCSP}
 MODissurecrt:=[]string{MODSUCRT}
 MODissurecrl:=[]string{MODSUCRL}
@@ -754,7 +775,7 @@ if(MODML[1]=="initOCSP"){
      fmt.Println("OCSP专用证书生成成功！")  
       savePrivateKey(certprivateKey,MODTC+"\\PKI\\OCSP\\ocsp.key")
 }
-if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP"){
+if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP" && CertIsCA==false){
      // 将证书保存到文件  
      certOut, err := os.Create(MODPKI_certdir+template.SerialNumber.Text(16)+".crt")  
      if err != nil {  
@@ -766,7 +787,17 @@ if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP"){
      fmt.Println("用户证书CRT证书生成成功！")  
 }
 
- 
+if(CertIsCA==true){
+     // 将证书保存到文件  
+     certOut, err := os.Create(MODPKI_cadir+template.SerialNumber.Text(16)+".crt")  
+     if err != nil {  
+     fmt.Println("用户证书CRT无法创建证书文件：", err)  
+     return  
+     }  
+     pem.Encode(certOut, &pem.Block{Type: "CERTIFICATE", Bytes: certderBytes})  
+     certOut.Close()  
+     fmt.Println("用户证书CRT证书生成成功！")    
+} 
 
 
 
@@ -781,11 +812,15 @@ if(MODML[1] != "initTIMSTAMP" && MODML[1] != "initOCSP"){
  certOut2.Close()  
  fmt.Println("WebPublic证书副本生成成功！")  
 
-    savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
-    ags:=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0"}
+var ags []string
     if(CertIsCA==true){
       ags=[]string {"newcert",template.SerialNumber.Text(16),"C", "V","0"}  
+      savePrivateKey(certprivateKey,MODPKI_cadir +template.SerialNumber.Text(16)+".key")
+    }else{
+    savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
+    ags=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0"} 
     }
+
     cmd3:=exec.Command(MODAUTOEXE, ags...)  
     outtext,err:=cmd3.CombinedOutput() 
     if err != nil {

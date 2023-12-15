@@ -201,8 +201,8 @@ MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\"
   
  // 将公钥转换为[]byte  
  publicKeyDER, err := x509.MarshalPKIXPublicKey(publicKey)  
- privateKeyDER := x509.MarshalPKCS1PrivateKey(privateKey) 
- fmt.Println(sha1.Sum(privateKeyDER))
+ //privateKeyDER := x509.MarshalPKCS1PrivateKey(privateKey) 
+ //fmt.Println(sha1.Sum(privateKeyDER))
  //MOD颁发者密钥
  var arr,arr2 [20]byte  
  arr=sha1.Sum(publicKeyDER)
@@ -212,7 +212,7 @@ MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\"
  //使用者密钥sha1
  subid:=arr2[:]
  //证书序列号
- CERTID:=time.Now().Unix()
+ CERTID:=big.NewInt(time.Now().Unix())
  //使用者证书类型 true为CA，false为最终实体
  CertIsCA:=true
  // 签发日期
@@ -221,6 +221,8 @@ MODPKI_rootdir:=MODTC+"\\PKI\\ROOT\\"
  modguoqiTime := "2099-07-19 15:30:00"  
 
 //MOD授权者信息
+MODSUCRT=strings.Replace(MODSUCRT, "{CID}", CERTID.Text(16), -1)
+MODSUCRL=strings.Replace(MODSUCRL, "{CID}", CERTID.Text(16), -1)
 MODissureocsp:=[]string{MODSUOCSP}
 MODissurecrt:=[]string{MODSUCRT}
 MODissurecrl:=[]string{MODSUCRL}
@@ -315,7 +317,7 @@ MODuseip:=[]net.IP{
 //MOD***********************
  // 创建证书模板  
  template := x509.Certificate{  
-     SerialNumber: big.NewInt(CERTID),  
+     SerialNumber:CERTID,  
      Subject: MODname,/*pkix.Name{  
      CommonName:   "aaa", // 证书主题名称 
      EMAIL:[]string{"admin@qq.com"},//邮箱
@@ -502,7 +504,7 @@ UnknownExtKeyUsage:MODUnknownExtKeyUsage,
  fmt.Println("ROOT证书生成成功！")  
 
  // 将证书保存到文件  
- certOut2, err := os.Create(MODTC+"\\PKI\\WebPublic\\CRT\\root.crt")  
+ certOut2, err := os.Create(MODTC+"\\PKI\\WebPublic\\CRT\\" + template.SerialNumber.Text(16)+ ".crt")  
  if err != nil {  
  fmt.Println("ROOT无法创建证书文件：", err)  
  return  

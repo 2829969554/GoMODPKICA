@@ -184,8 +184,15 @@ if(MODML[1]=="list" || MODML[1]=="LIST" || MODML[1]=="ls" || MODML[1]=="LS"){
 	os.Exit(0)
 }
 if(MODML[1]=="signCERT" || MODML[1]=="signcert" || MODML[1]=="signcrt" || MODML[1]=="CRT" || MODML[1]=="crt"){
-	fmt.Println("签发下级用户证书")
+	fmt.Println("签发下级证书")
     fmt.Println("输入参数后请按回车键，如留空可直接按回车")
+    IssureID:="root"
+    showcalist(MODPKI_certsfile)
+	fmt.Print("请输入将要选择的颁发者序列号(留空则默认根证书)：")
+	fmt.Scanln(&IssureID) 
+	if(IssureID==""){
+		IssureID="root"
+	}
     certtype:="0"
 	fmt.Println("")
 	fmt.Print("请输入将要颁发的证书类型(0:最终实体 1:中间CA)：")
@@ -310,7 +317,7 @@ if(MODML[1]=="signCERT" || MODML[1]=="signcert" || MODML[1]=="signcrt" || MODML[
 
 	 // 命令行参数  
 	 var args []string
-	 args=[]string{finalString,keybit,hash,keyusage,exusage,certtype,zxtime,ymlisttx,iplisttx,Kernel} 
+	 args=[]string{finalString,keybit,hash,keyusage,exusage,certtype,zxtime,ymlisttx,iplisttx,Kernel,IssureID} 
 	 // 创建一个*Cmd对象，表示要执行的命令  
 	 cmd := exec.Command(MODTC+"\\MAKECERT.EXE", args...)  
 	  
@@ -486,4 +493,40 @@ fmt.Printf("args[%v]=[%v]\n",k,v)
 }
 
 os.Exit(0)
+}
+
+
+//函数显示颁发者证书
+func showcalist(MODPKI_certsfile string){
+	fmt.Println("查看当前所有证书数量和信息")
+    // 打开文件  
+    file, err := os.Open(MODPKI_certsfile)  
+    if err != nil {  
+        fmt.Println(err)  
+        return  
+    }  
+    defer file.Close()  
+  
+    // 创建一个新的 Reader  
+    reader := bufio.NewReader(file)  
+  	fileindex:=0
+    // 循环读取每一行  
+    for{  
+        line, err := reader.ReadString('\n')  
+        if err != nil {  
+            break 
+        } 
+        if(line[0]=='#'){
+        	continue
+        }
+
+        clist:=strings.Split(line," ")
+        if(len(clist)==5){
+        	if(clist[1]=="C" || clist[1]=="R"){
+        		fileindex=fileindex+1
+        		fmt.Println(line) // 仅输出CA级别序列号
+        	}
+        }
+    } 
+    fmt.Println("颁发者统计总数量：",fileindex,"第一列为颁发者序列号")
 }
