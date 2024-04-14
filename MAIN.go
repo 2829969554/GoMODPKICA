@@ -13,7 +13,7 @@ import (
 	"bufio"
 	"io/ioutil"
 	"crypto/x509"
-	"crypto/x509/pkix"
+	//"crypto/x509/pkix"
 	"encoding/pem"
 	"time"
 	"encoding/asn1"
@@ -53,6 +53,7 @@ MODPKI_ROOTGETCRLEXE:=MODTC+"\\rootGETcrl.exe"
 //OCSP签名证书
 MODPKI_OCSPfile:=MODTC+"\\PKI\\OCSP\\ocsp.crt"
 MODPKI_OCSPfilekey:=MODTC+"\\PKI\\OCSP\\ocsp.key"
+MODPKI_OCSPCAs:=MODTC+"\\PKI\\CA\\"   //{uid}.crt //{uid}.key
 //时间戳服务
 MODTIMSTAMPdir:=MODTC+"\\PKI\\TIMSTAMP\\"   //时间戳服务根目录
 MODTIMSTAMPlogdir:=MODTIMSTAMPdir+"\\log\\" //时间戳req进 rsa出log日志目录
@@ -68,49 +69,12 @@ MODWEBPORT:="80"
 MODWebPublic:=MODTC+"\\PKI\\WebPublic"
 
 
-	// 读取现有OCSP的证书和私钥文件
-	ocspcertBytes, err := ioutil.ReadFile(MODPKI_OCSPfile)
-	if err != nil {
-		fmt.Println("Error reading OCSP certificate:", err)
-		return
-	}
 
-	ocspkeyBytes, err := ioutil.ReadFile(MODPKI_OCSPfilekey)
-	if err != nil {
-		fmt.Println("Error reading OCSP key:", err)
-		return
-	}
-
-	// 解析证书和私钥
-	ocspcertBlock, _ := pem.Decode(ocspcertBytes)
-	ocspcert, err := x509.ParseCertificate(ocspcertBlock.Bytes)
-	if err != nil {
-		fmt.Println("Error parsing  OCSP certificate:", err)
-		return
-	}
-
-	ocspkeyBlock, _ := pem.Decode(ocspkeyBytes)
-	ocspprivKey, err := x509.ParsePKCS1PrivateKey(ocspkeyBlock.Bytes)
-	if err != nil {
-		fmt.Println("Error parsing OCSP private key:", err)
-		return
-	}
-
-	// 读取现有颁发者的证书
-	ROOTcertBytes, err := ioutil.ReadFile(MODPKI_ROOTfile)
-	if err != nil {
-		fmt.Println("Error reading ROOT certificate:", err)
-		return
-	}
-	// 解析ROOT证书
-	rootBlock, _ := pem.Decode(ROOTcertBytes)
-	rootcert, err := x509.ParseCertificate(rootBlock.Bytes)
-	if err != nil {
-		fmt.Println("Error parsing  ROOT certificate:", err)
-		return
-	}
 //*************主线程 main 代码止 下面是WEB订阅函数******************************
-
+// 启动时刷新CRL吊销列表  
+cmd := exec.Command(MODPKI_ROOTGETCRLEXE,)  				  
+// 运行命令并等待它完成  
+cmd.CombinedOutput() 
 
 //*********************************************************************************
 //HTTP /OCSP在线证书状态协议监听函数
@@ -163,6 +127,7 @@ if err != nil {
  Cstatus:="N"
  Cponse:=0
  Ctime := time.Now()
+ Cbfcid:=""
     // 循环读取每一行  
     for{  
         line, err := reader.ReadString('\n')  
@@ -179,7 +144,7 @@ if err != nil {
          if(fields[0]==res.SerialNumber.Text(16)){
          	//状态码V：正常  R：吊销   N：未知
          	Cstatus=fields[2]
-         	
+         	Cbfcid=rftrn(fields[5])
              num2, err2 := strconv.Atoi(fields[3])  
              if err2 != nil {  
              fmt.Println("转换失败:", err2)  
@@ -231,11 +196,67 @@ CEstatus:=2
     	CEstatus=1
     }
 
+/*
 suijiNonce:=pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,5,5,7,48,1,2},
         Critical: false,
         Value:    last18Bytes,//ocspNonce,
 }
+fmt.Print(suijiNonce)
+*/
+
+	MODPKI_OCSPfile=MODPKI_OCSPCAs+Cbfcid+".crt"
+	MODPKI_OCSPfilekey=MODPKI_OCSPCAs+Cbfcid+".key"
+
+	if _, err2 := os.Stat(MODPKI_OCSPfile); err2 != nil { 
+		MODPKI_OCSPfile=MODTC+"\\PKI\\ROOT\\root.crt"
+		MODPKI_OCSPfilekey=MODTC+"\\PKI\\ROOT\\root.key"
+	}
+
+	// 读取现有OCSP的证书和私钥文件
+	ocspcertBytes, err := ioutil.ReadFile(MODPKI_OCSPfile)
+	if err != nil {
+		fmt.Println("Error reading OCSP certificate:", err)
+		return
+	}
+
+	ocspkeyBytes, err := ioutil.ReadFile(MODPKI_OCSPfilekey)
+	if err != nil {
+		fmt.Println("Error reading OCSP key:", err)
+		return
+	}
+
+	// 解析证书和私钥
+	ocspcertBlock, _ := pem.Decode(ocspcertBytes)
+	ocspcert, err := x509.ParseCertificate(ocspcertBlock.Bytes)
+	if err != nil {
+		fmt.Println("Error parsing  OCSP certificate:", err)
+		return
+	}
+
+	ocspkeyBlock, _ := pem.Decode(ocspkeyBytes)
+	ocspprivKey, err := x509.ParsePKCS1PrivateKey(ocspkeyBlock.Bytes)
+	if err != nil {
+		fmt.Println("Error parsing OCSP private key:", err)
+		return
+	}
+	MODPKI_ROOTfile=MODPKI_OCSPfile
+	// 读取现有颁发者的证书
+	ROOTcertBytes, err := ioutil.ReadFile(MODPKI_ROOTfile)
+	if err != nil {
+		fmt.Println("Error reading ROOT certificate:", err)
+		return
+	}
+	// 解析ROOT证书
+	rootBlock, _ := pem.Decode(ROOTcertBytes)
+	rootcert, err := x509.ParseCertificate(rootBlock.Bytes)
+	if err != nil {
+		fmt.Println("Error parsing  ROOT certificate:", err)
+		return
+	}
+
+
+
 // 创建OCSP响应对象模板  
  ocspResp := ocsp.Response{  
 	 RevocationReason:Cponse,
@@ -245,13 +266,14 @@ suijiNonce:=pkix.Extension{
 	 NextUpdate:time.Now().UTC().Add(10 * time.Minute),
 	 RevokedAt:Ctime.UTC(),
 	 IssuerHash:0,
-	 Extensions:[]pkix.Extension{suijiNonce},
-	 ExtraExtensions:[]pkix.Extension{suijiNonce},
+	 //Extensions:[]pkix.Extension{suijiNonce},
+	 //ExtraExtensions:[]pkix.Extension{suijiNonce},
 	 Certificate:ocspcert,
 	 Status:  CEstatus,   //0,1,2 {Good, Revoked, Unknown}这里假设状态为"good"，你可以根据实际情况修改这个值。其他可选状态包括：ocsp.Revoked、ocsp.Unknown。  
 	 SerialNumber: res.SerialNumber, // 设置响应的序列号，与证书的序列号相同。如果OCSP请求中指定了序列号，则应该与证书的序列号匹配。  
 	 
  } 
+
 
 
  //给OCSP响应对象模板签名转ANS.1数据[]byte（使用证书和私钥作为签名者）
@@ -299,6 +321,7 @@ return
 		 	fmt.Fprint(w,"欢迎访问 MOD PKI CA 基础服务页面。")  
 		 	return
 		 }
+		 /* 更新太快了，暂时屏蔽改为main启动时刷新CRL一次
 		 //判断左边是不是/CRL，如果是就刷新
 		 if strings.HasPrefix(filePath, "/CRL") {  
 		  	 // 创建一个*Cmd对象，表示要执行的命令  
@@ -306,6 +329,7 @@ return
 			// 运行命令并等待它完成  
 			 cmd.CombinedOutput()  
 		 }
+		 */
 
 		 //将请求URL/CRT/root.crt中的/转为\\
 		 filePath = strings.Replace(filePath, "/", "\\\\", -1)  

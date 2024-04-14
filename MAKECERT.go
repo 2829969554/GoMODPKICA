@@ -24,7 +24,7 @@ package main
             带有EV扩展标识支持驱动
             。。。。扩展性很强。。这里就不举例子了
              */
-import (  
+import (    
  "crypto/rand"  
  "crypto/rsa"  
  "crypto/x509"  
@@ -44,7 +44,8 @@ import (
  "bufio"
  "os/exec"
  "io/ioutil"
- "log"  
+ "log"
+ mrand "math/rand"
 )  
 //去掉结尾的\r\n
 func rftrn(s string) string {  
@@ -339,7 +340,7 @@ if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
  //使用者密钥sha1
  subid:=arr2[:]
  //证书序列号
- CERTID:=time.Now().Unix()
+ CERTID:=time.Now().Unix()  + int64(mrand.Intn(1000))
  //使用者证书类型 true为CA，false为最终实体
 
  CertIsCA:=false
@@ -820,11 +821,11 @@ if(CertIsCA==true){
 
 var ags []string
     if(CertIsCA==true){
-      ags=[]string {"newcert",template.SerialNumber.Text(16),"C", "V","0"}  
+      ags=[]string {"newcert",template.SerialNumber.Text(16),"C", "V","0","null",rootcert.SerialNumber.Text(16)}  
       savePrivateKey(certprivateKey,MODPKI_cadir +template.SerialNumber.Text(16)+".key")
     }else{
     savePrivateKey(certprivateKey,MODPKI_keydir +template.SerialNumber.Text(16)+".key")
-    ags=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0"} 
+    ags=[]string {"newcert",template.SerialNumber.Text(16),"E", "V","0","null",rootcert.SerialNumber.Text(16)} 
     }
 
     cmd3:=exec.Command(MODAUTOEXE, ags...)  

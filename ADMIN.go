@@ -511,6 +511,7 @@ func showcalist(MODPKI_certsfile string){
     reader := bufio.NewReader(file)  
   	fileindex:=0
     // 循环读取每一行  
+    fmt.Println("颁发者序列号     证书类别   证书状态      签发时间/吊销时间")
     for{  
         line, err := reader.ReadString('\n')  
         if err != nil {  
@@ -521,10 +522,23 @@ func showcalist(MODPKI_certsfile string){
         }
 
         clist:=strings.Split(line," ")
-        if(len(clist)==5){
+        if(len(clist)==6){
         	if(clist[1]=="C" || clist[1]=="R"){
         		fileindex=fileindex+1
-        		fmt.Println(line) // 仅输出CA级别序列号
+        		if(clist[1]=="C"){
+        			clist[1]="CA  "
+        		}
+        		if(clist[1]=="R"){
+        			clist[1]="ROOT"
+        		}
+
+        		if(clist[2]=="V"){
+        			clist[2]="正常"
+        		}
+        		if(clist[2]=="R"){
+        			clist[2]="吊销"
+        		}
+        		fmt.Println(clist[0] +"         " + clist[1] +"         " +clist[2] +"         " +clist[4]) // 仅输出CA级别序列号
         	}
         }
     } 

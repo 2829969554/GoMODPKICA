@@ -1,0 +1,105 @@
+<html>
+<head>
+    <title>Example Demo CA</title>
+    <link rel="stylesheet" type="text/css" href="css/homestyle.css"  media="screen" />
+    <link rel="alternate" type="application/rss+xml" title="Certificate changes" href="feed/certificates">
+    <script type="text/javascript" src="js/webview.js"></script>
+</head>
+<body>
+<div id="header">
+    <div id="logo">
+        <h1>Example Demo CA</h1>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            <li><a href="/home.html">主页</a></li>
+            <li><a href="/reqcsrgen.html">证书在线申请&nbsp;帮助</a></li>
+            <li><a href="/pushcsr.html">提交离线&nbsp;证书申请</a></li>
+            <li><a href="/caserver.html">证书机构服务</a></li>
+            <li><a href="/certslist.html">所有证书&nbsp;列表</a></li>
+            <li><a href="/reqlist.html">证书申请&nbsp;列表</a></li>
+        </ul>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            
+            <li><a href="/adreqlist.html">管理员入口</a></li>
+            
+        </ul>
+    </div>
+</div>
+
+<div id="page">
+
+<div id="content">
+    <h1>颁发者的证书列表</h1>
+    <h2>所有CA证书</h2>
+    <p><a href="/certificates.zip"><img src="icon/archive.png" id="icon"/>下载</a> 所有CA证书的zip压缩存档。
+    </p>
+    <h2>证书列表</h2>
+    <span class="pagebanner">系统中CA证书数量.</span><span class="pagelinks"><strong>1</strong></span>
+<table cellpadding="1" class="simple">
+<thead>
+<tr> 
+<th class="sortable sorted order1">
+<a href="certslist.html?d-49653-o=1&amp;d-49653-p=1&amp;d-49653-s=0">序号</a>
+</th>
+<th class="sortable">
+<a href="certslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=4">证书序列号</a></th>
+<th class="sortable">
+
+<a href="certslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=1">使用者主题信息</a></th>
+<th class="sortable">
+<a href="certslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=2">证书状态</a></th>
+
+<th>操作</th>
+
+<th class="sortable">
+<a href="certslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=4">颁发者公用名称:</a></th>
+
+<th class="sortable">
+<a href="certslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=5">是否已弃用:</a></th></tr></thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>AAAAAAAA</td>
+<td>OU=Developer, O=AA SAMPLE ORGANIZATION, CN=MOD PKI ROOT, C=CN</td>
+<td><img src="icon/certificate.png"/>OK</td>
+<td><a href="/certinfo.html?id=1"><img src="icon/details.png" alt="Details"/></a>&nbsp;<a href="/certificate?id=1"><img src="icon/certificate_save.png" alt="Details"/></a><br>
+</td>
+<td>ROOT</td>
+<td>正常</td>
+</tr></tbody></table>
+
+    <br/>
+
+
+    <p>
+        Note: Click on the column headers to sort.
+    </p>
+
+</div>
+
+
+</div>
+
+
+	<div style="clear: both;">&nbsp;</div>
+
+
+<div id="footer">
+    <p>此 CA 由 <a
+    href="mailto:2829969554@qq.com"/>MODPKICA</a></p>
+	<p>当前网页模板 <a href="">免费模板</a>.</p>
+    <p>Powered by <a href="">MOD PKI CA</a></p>
+</div>
+</body>
+</html>

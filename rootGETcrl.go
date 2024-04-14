@@ -56,7 +56,7 @@ MODPKI_WEBcrldir:=MODTC+"\\PKI\\WebPublic\\CRL\\"
         }
 
         clist:=strings.Split(line," ")
-        if(len(clist)==5){
+        if(len(clist)==6){
             if(clist[1]=="C" || clist[1]=="R"){
                 modmakecrl(clist[1],clist[0],MODPKI_rootdir,MODPKI_cadir,MODPKI_WEBcrldir,MODPKI_certsfile)
             }

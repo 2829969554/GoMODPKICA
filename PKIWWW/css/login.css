@@ -1,0 +1,253 @@
+*{ padding:0px; margin:0px;}
+body{
+	width:100%;
+	height:100%;	
+	background:#D5E3EC;
+	font-size:12px;
+}
+.login {
+	width:564px;
+	height:457px;
+	position:absolute;
+	top:50%;
+	left:50%;
+	margin:-271px 0 0 -282px;
+	background:url(../img/share_bg.png) no-repeat;
+	z-index:100;
+}
+
+.logo {
+	width:152px;
+	height:60px;
+	background:url(../img/logo.png) no-repeat;
+	margin-top:22px;
+	margin-left:34px;
+}
+.notice_button {
+	width:33px;
+	height:27px;
+	margin-top:-52px;
+	margin-left:500px;
+	cursor:pointer;
+	background:url(../img/open_normal.gif) no-repeat;
+}
+.down_logo {
+	width:53px;
+	height:43px;
+	margin-top:57px;
+	margin-left:439px;
+	cursor:pointer;
+	background:url(../img/down_logo.gif) no-repeat;
+}
+.login_type {
+	margin-top:7px;
+	margin-left:51px;
+}
+.login_type ul li {
+	list-style-type:none;
+	float:left;
+	width:72px;
+	height:24px;
+	line-height:26px;
+	font-size:12px;
+	text-indent:12px;
+	margin-top:10px;
+}
+.login_type .active {
+	border:1px solid #88CEFF;
+	background:#DCF5FF;
+	color:#004198;
+}
+.login_type .inactive {
+	border:1px solid #E2F1F9;
+	background:#E2F0F9;
+	color:#8399A6;
+}
+.login_type .inactive:hover {
+	border:1px solid #88CEFF;
+	background:#DCF5FF;
+	color:#004198;
+	cursor:pointer;
+}
+
+.user_text {
+	height:;
+	font-size:12px;
+	color:#0F489A;
+	margin-top:10px;
+	margin-right:31px;
+	float:right;
+	word-spacing:5px;
+}
+
+.info_text {
+	width:100%
+	font-size:12px;
+	color:#FF7F31;
+	margin-left:51px;
+	margin-bottom:3px;
+	margin-top:65px;
+}
+.form {
+	clear:left;
+	height:118px;
+	margin-left:56px;
+}
+.form label{
+	font-size:12px;
+	color:#242524;
+	margin-left:12px;
+	margin-right:6px;
+	line-height:22px;
+}
+
+.form .input {
+	width:142px;
+	height:20px;
+	border:1px solid #5DA1C4;
+	margin-top:16px;
+	line-height:20px;
+}
+.form .label_login {
+}
+.validcode {
+	margin-top:7px;
+	margin-left:44px;
+}
+
+.submit_button,.cancel_button {
+	width:79px;
+	height:24px;
+	border:0px;
+	margin-top:39px;
+	cursor:pointer;
+}
+.submit_button {
+	margin-left:249px;
+	background:url(../img/submit_button.png);
+}
+.cancel_button {
+	margin-left:13px;
+	background:url(../img/cancel_button.png);
+}
+
+.login_bottom {
+	width:100%;
+	height:33px;
+	font-size:12px;
+	color:#283334;
+	line-height:38px;
+	text-align:center;
+	bottom:4px;
+	position:absolute;
+	float:left;
+}
+
+.verifycode {
+	margin-bottom: 10px;
+	margin-top: 10px;
+	width: 400px;
+	float:left;
+}
+.refresh{
+	cursor:pointer;
+}
+.notice,.download_dialog {
+	width:255px;
+	height:379px;
+	background:url(../img/dialog_bg.png) no-repeat;
+	position:absolute;
+	top:50%;
+	left:50%;
+	margin:-242px 0 0 269px;	
+	z-index:1;
+}
+
+.dialog_header_mid {
+	width:80px;
+	height:17px;
+	font-size:12px;
+	color:#253A5D;
+	font-weight:bold;
+	margin-top:16px;
+	margin-left:26px;
+	/*background:url(../img/dialog_header_mid.png)
+	 * repeat-x;
+*/
+}
+.dialog_close_button {
+	width: 22px;
+	height:22px;
+	background:url(../img/close.gif);
+	margin-top:-19px;
+	margin-left:218px;
+	cursor:pointer;
+}
+.dialog_content {
+	width:210px;
+	height:300px;
+	font-size:12px;
+	color:#444547;
+	line-height:25px;
+	margin-left:20px;
+	margin-top:25px;
+	overflow:hidden;
+	text-indent:7px;
+}
+.dialog_bottom_mid {
+	font-size: 13px;
+    	margin-left: 185px;
+    	margin-top: 0px;
+	color: #003F96;
+}
+.content_margin  {
+	margin-top:6px;
+	margin-left:6px;
+}
+.link_item {
+	font-size:12px;
+	float:left;
+	line-height:23px;
+	margin:7px;
+	text-indent:10px;
+	padding-right:8px;
+}
+.blue_style {
+	border:1px solid #86B9D8;
+	background:#D6F1FF;
+	color:#2C3844;
+}
+.green_style {
+	border:1px solid #93D8A2;
+	background:#DCFFE3;
+	color:#2F3743;
+}
+.red_style {
+	border:1px solid #DBAB94;
+	background:#FFE7DD;
+	color:#303845;
+}
+.notice_text {
+	font-size:14px;
+	color:#000000;
+	text-indent:7px;
+	word-break:break-all;
+	word-warp:break-word;
+}
+.notice_more {
+	font-size:12px;
+	color:#004096;
+	float:right;
+	margin-right:23px;
+	margin-top:12px;
+}
+.notice_more a {
+	text-decoration:none;
+}
+
+.marquee1 {
+	height:280px;
+	direction:up;
+	scrollAmount:3;
+	cursor:pointer
+}

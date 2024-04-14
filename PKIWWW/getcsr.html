@@ -1,0 +1,147 @@
+<html>
+<head>
+    <title>Example Demo CA</title>
+    <link rel="stylesheet" type="text/css" href="css/homestyle.css"  media="screen" />
+    <link rel="alternate" type="application/rss+xml" title="Certificate changes" href="feed/certificates">
+    <script type="text/javascript" src="js/webview.js"></script>
+</head>
+<body>
+<div id="header">
+    <div id="logo">
+        <h1>Example Demo CA</h1>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            <li><a href="/home.html">主页</a></li>
+            <li><a href="/reqcsrgen.html">证书在线申请&nbsp;帮助</a></li>
+            <li><a href="/pushcsr.html">提交离线&nbsp;证书申请</a></li>
+            <li><a href="/caserver.html">证书机构服务</a></li>
+            <li><a href="/certslist.html">所有证书&nbsp;列表</a></li>
+            <li><a href="/reqlist.html">证书申请&nbsp;列表</a></li>
+        </ul>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            
+            <li><a href="/adreqlist.html">管理员入口</a></li>
+            
+        </ul>
+    </div>
+</div>
+
+<div id="page">
+<div id="content">
+    <h1>如何为您的证书生成 CSR？</h1>
+    <p>
+        要获得证书，您需要提交有效的证书 签名请求 (<strong>CSR</strong>). 在这里你可以找到描述使用常用软件创建CSR的一些标准方法。
+        1.<a href="https://myssl.com/csr_create.html">亚洲诚信第三方工具</a>
+    </p>
+
+    <h2>OpenSSL</h2>
+    <p>
+        <a href="http://www.openssl.org/">OpenSSL</a> 是一个开源的SSL工具包， <code>openssl</code>
+ 其中包括专门用于处理现代密码学各个方面的程序。 它还能够处理 RSA 密钥、X509 证书、CSR-s 和 PKCS-12 密钥库。它包含在大多数当前的 linux 发行版中， 并且是 Linux 中证书管理的基本工具。openssl
+    </p>
+    <p>
+        要使用 openssl 生成私钥和 CSR，请调用以下命令：<br/>
+        <div class="example">
+            <code>
+        openssl req -new -nodes -keyout user-key.pem -out user.csr<br/>
+            </code>
+        </div>
+        系统将询问您有关证书的某些信息量。 请仔细填写，并记住，通常最依赖 CA 策略 的字段为必填项。完成后，将生成两个文件：
+        <ul>
+            <li><code>user-key.pem</code>  - 未加密的私钥（
+                <code>-nodes</code> 加密此密钥). <strong>保护这个 钥匙！</strong></li>
+            <li><code>user.csr</code> - CSR 文件，并且将<a href="submit.jsp">提交给</a>
+             CA。</li>
+        </ul>
+    </p>
+    <p>
+       当您的证书被签署时
+        <a href="certslist.html">下载它</a> （您可以从网页获取它或等待带有它的电子邮件）
+        <a href="cacert.pem">CA 证书</a>但您可能还需要一个密钥库。生成 PKCS-12 密钥库与openssl invoke命令 (假设证书在里面，
+        <code>user-cert.pem</code> CA证书在里面 <code>cacert.pem</code>:<br/>
+        <div class="example">
+            <code>
+openssl pkcs12 -export -in user-cert.pem -out user.p12 
+-inkey user-key.pem -name "user" -certfile cacert.pem
+            </code>
+        </div>
+       在此之后，您将拥有可供使用的 PKCS-12 密钥库。
+    </p>
+
+    <h2>JAVA 密钥工具</h2>
+    <p>
+随着 java 的出现，名为 的小实用程序，它是专用的 来管理密钥库。它可以在 PKCS-12 密钥库或 Java 上运行 密钥库 - JKS。本节仅引用一个新的 keytool， 它随 Java 6 一起提供。keytool
+
+使用公钥/私钥对和自颁发的密钥库（即 对大多数应用程序无效） 证书调用：
+    </p>
+
+
+    <div class="example">
+        <code>
+            keytool -keystore user.jks -genkeypair -alias user -keysize 2048 -keyalg rsa
+        </code>
+    </div>
+现在，系统将提示您有关证书信息的信息。尽可能多地填写数据， 因为这是 CA 策略的要求（填写所有数据是安全的）。注意 that using diacretics may cause problem with 某些应用程序有效...不是全部 CA 接受此类值，因此最好仅使用 ASCII 字符。 然后使用以下命令创建 CSR：
+    <div class="example">
+        <code>
+            keytool -certreq -v -keystore user.jks -alias user -file user.csr
+        </code>
+    </div>
+   在此之后，您将拥有以下文件：
+    <ul>
+        <li><code>user.jks</code> - 你的密钥库</li>
+        <li><code>user.csr</code> - 证书请求文件 <a href="pushcsr.html">提交给MODPKI CA系统</a>
+        </li>
+    </ul>
+当您的证书被签名时，请下载它（您可以从网页获取它或等待带有它的电子邮件），下载 CA 证书并安装到密钥库中。 首先安装 CA 证书，然后安装您的证书（假设 CA 证书文件是：，您的证书是：）：cacert.pemuser-cert.pem
+    <div class="example">
+        <code>
+            keytool -importcert -keystore user.jks -alias CA -file cacert.pem<br/>
+            keytool -importcert -keystore user.jks -alias user -file user-cert.pem
+        </code>
+    </div>
+   完成后，您可以检查密钥库调用：
+    <div class="example">
+        <code>
+     keytool -list -v -keystore user.jks
+        </code>
+    </div>
+之后，您将拥有一个用于 java 应用程序的有效密钥库。这 例如，密钥库可用于网格应用程序，如 Unicore 6 客户端 或服务器组件。
+
+    <h2>在线请求生成</h2>
+    <p>
+        此 CA 允许 <a href="reqcsrgen.html">在线生成请求</a>,
+        ， 对于不熟悉默认工具的用户来说，这可能很方便 用于生成证书请求。
+    </p>
+    <p clas="warning">
+请注意，在服务器上生成密钥不是一个好的做法。 如果要使用此方法，则应使用SSL加密连接。
+一般情况下，建议自行生成密钥和CSR 计算机，并且永远不要通过网络发送密钥。
+    </p>
+</div>
+
+
+</div>
+
+
+	<div style="clear: both;">&nbsp;</div>
+
+
+<div id="footer">
+    <p>此 CA 由 <a
+    href="mailto:2829969554@qq.com"/>MODPKICA</a></p>
+	<p>当前网页模板 <a href="">免费模板</a>.</p>
+    <p>Powered by <a href="">MOD PKI CA</a></p>
+</div>
+</body>
+</html>

@@ -58,20 +58,20 @@ if(len(args) >=3){
 }
 
 if(len(args) >=5){
-	if(args[1]=="newcert"  && len(args)==6){
-		fmt.Println("增加证书",args[2],args[3],args[4],args[5])
-		modaddcert(args[2],args[3],args[4],args[5],getmodtimeNow())
-		os.Exit(0)
-	}
 
-	if(args[1]=="newcert"  && len(args)==7){
-		fmt.Println("增加证书",args[2],args[3],args[4],args[5],args[6])
-		_,err:=modtimeToTime(args[6])
-		if err != nil {
-			modaddcert(args[2],args[3],args[4],args[5],getmodtimeNow())
+	if(args[1]=="newcert"){
+		//fmt.Println("增加证书",args[2],args[3],args[4],args[5],args[6],args[7])
+		if(args[6] !="null"){
+			_,err:=modtimeToTime(args[6])
+			if err != nil {
+				modaddcert(args[2],args[3],args[4],args[5],getmodtimeNow(),args[7])
+			}else{
+				modaddcert(args[2],args[3],args[4],args[5],args[6],args[7])
+			}
 		}else{
-			modaddcert(args[2],args[3],args[4],args[5],args[6])
+			modaddcert(args[2],args[3],args[4],args[5],getmodtimeNow(),args[7])
 		}
+
 		
 		os.Exit(0)
 	}
@@ -79,7 +79,7 @@ if(len(args) >=5){
 
 
 
-
+fmt.Println(args[1],args[2],args[3],args[4],args[5],args[6],args[7])
 fmt.Println("错误:无效操作")
 os.Exit(0)
 }
@@ -102,8 +102,8 @@ func modrevokecert(certid string,certstatus string,certponse string,certtime str
 			words:= strings.Split(line, " ")
 			if(words[0]==certid){
 				
-				if(len(words)==5){
-					newline:=words[0]+" "+ words[1] + " " + certstatus+ " " + certponse + " " + certtime
+				if(len(words)==6){
+					newline:=words[0]+" "+ words[1] + " " + certstatus+ " " + certponse + " " + certtime + " "+ words[5]
 					CERTSallData, _ := ioutil.ReadFile(MODCERTSdir)
 					replaced := bytes.Replace(CERTSallData, []byte(line), []byte(newline), -1)
 					os.WriteFile(MODCERTSdir, replaced, 0644)
@@ -197,8 +197,8 @@ func echonewcertsfile(){
 
 
 //MODPKICA系统 添加证书
-func modaddcert(certid string,certtype string,certstatus string,certponse string,certtime string){
-	newline:=certid+" "+ certtype + " " + certstatus+ " " + certponse + " " + certtime + "\r\n"
+func modaddcert(certid string,certtype string,certstatus string,certponse string,certtime string,downcid string){
+	newline:=certid+" "+ certtype + " " + certstatus+ " " + certponse + " " + certtime + " "+ downcid + "\r\n"
 	// 要追加的内容  
     data := []byte(newline)  
   

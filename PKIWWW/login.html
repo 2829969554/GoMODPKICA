@@ -1,0 +1,65 @@
+<!--http://192.168.101.152:8080/login.html-->
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<title>用户登录</title>
+<link href="css/login.css" rel="stylesheet" type="text/css" />
+<script type="text/javascript" src="js/login.js"></script>
+</head>
+<body>
+	<div class="big_bg" style="">
+		<div class="login">
+			<div class="logo"></div>
+			<div class="notice_button" title="公告信息"> </div>
+			<div class="down_logo" title="下载" onclick="MODPKICAshowgonggao2()"> </div>
+
+			<div class="login_type">
+				<ul>
+					<li id="password" class="active">口令登录</li>
+					<li id="cert" class="inactive" onclick="login_certlogin()">证书登录</li>
+				</ul>
+			</div>
+			<div class="info_text" id="info_text">
+			</div>
+			<div class="form">
+				<form>
+					<label class="label_login">　帐号：</label><input class="input" type="text" name="account" autocomplete="off" maxlength="64">
+					<label class="lable_login">　密码：</label><input class="input" type="password" name="password" autocomplete="off" maxlength="40"><br>
+					<div class="verifycode" >
+						<label class="label_login">验证码：</label><input class="input" type="text" name="verifycode" maxlength="8" onkeyup="">
+						<img class="verifycode_img" style="margin-bottom:-11px; cursor:pointer"></img>
+						<img class="refresh" name="refresh" title="单击刷新验证码" onclick="login_reloadyzm()" src="img/refresh.png"></img>
+					</div>
+					<input type="button" onclick="login_submit()" class="submit_button">
+					<input type="button" onclick="window.location.href='/';" class="cancel_button">
+				</form>
+			</div>
+			<div class="login_bottom"> </div>
+		</div>
+		<div class="notice dialog" id="MODPKICAgonggao1" style="display: none;">
+			<div class="dialog_header_mid"> 公告 </div>
+			<div class="dialog_close_button" onclick="MODPKICAclosegonggao1()"> </div>
+			<div class="dialog_content">
+				<div class="content_margin">
+					<marquee height="280px" direction="up" scrollAmount="3" style="cursor:pointer" onMouseOver="" onMouseout="">
+					<p class="notice_text">
+					</p>
+					</marquee>
+				</div>
+			</div>
+			<div class="dialog_bottom_mid"> </div>
+		</div>
+		<div class="download_dialog dialog" id="MODPKICAgonggao2" style="display: none;">
+			<div class="dialog_header_mid"> 相关下载 </div>
+			<div class="dialog_close_button" onclick="MODPKICAclosegonggao2()"> </div>
+			<div class="dialog_content">
+				<div class="content_margin">
+				</div>
+			</div>
+			<div class="dialog_bottom_mid"> </div>
+		</div>
+	</div>
+</body>
+</html>
+

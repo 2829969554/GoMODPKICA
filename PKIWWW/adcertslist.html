@@ -1,0 +1,111 @@
+<html>
+<head>
+    <title>Example Demo CA</title>
+    <link rel="stylesheet" type="text/css" href="css/homestyle.css"  media="screen" />
+    <link rel="alternate" type="application/rss+xml" title="Certificate changes" href="feed/certificates">
+    <script type="text/javascript" src="js/webview.js"></script>
+</head>
+<body>
+<div id="header">
+    <div id="logo">
+        <h1>Example Demo CA</h1>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            <li><a href="/home.html">主页</a></li>
+            <li><a href="/reqcsrgen.html">证书在线申请&nbsp;帮助</a></li>
+            <li><a href="/pushcsr.html">提交离线&nbsp;证书申请</a></li>
+            <li><a href="/caserver.html">证书机构服务</a></li>
+            <li><a href="/certslist.html">所有证书&nbsp;列表</a></li>
+            <li><a href="/reqlist.html">证书申请&nbsp;列表</a></li>
+        </ul>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            
+            <li><a href="/adreqlist.html">待处理证书请求&nbsp;列表</a></li>
+            <li><a href="/adcertslist.html">证书&nbsp;管理</a></li>
+            
+            
+        </ul>
+    </div>
+</div>
+
+<div id="page">
+<SCRIPT LANGUAGE="JavaScript">
+    
+    function pressed(what, serial)
+    {
+        document.csrs.what.value=what;
+        document.csrs.serial.value=serial;
+        document.csrs.submit();
+    }
+</SCRIPT>
+
+
+<div id="content">
+    <h1>管理系统中颁发的证书</h1>
+    <p>嗨，管理员，您可以在这里撤销任何已颁发的证书。撤销 证书不再可供下载，并包含在
+    <strong>证书吊销列表</strong>中。这通常意味着， 执行此操作后，证书将不可用。
+    </p>
+    <hr/>
+        <span class="pagebanner">One item found.</span><span class="pagelinks"><strong>1</strong></span>
+    <form action="admin_operation" method="get" name="csrs">
+
+<table cellpadding="1" class="simple">
+<thead>
+<tr>
+<th class="sortable sorted order1">
+<a href="adcertslist.html?d-49653-o=1&amp;d-49653-p=1&amp;d-49653-s=0">序列号</a></th>
+<th class="sortable">
+<a href="adcertslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=1">主题信息</a></th>
+<th class="sortable">
+<a href="adcertslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=2">目前状态</a></th>
+<th>操作</th>
+<th class="sortable">
+<a href="adcertslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=4">颁发者公用名称:</a></th>
+<th class="sortable">
+<a href="adcertslist.html?d-49653-o=2&amp;d-49653-p=1&amp;d-49653-s=5">是否已撤销:</a></th></tr></thead>
+<tbody>
+<tr class="odd">
+<td>1011121314</td>
+<td>OU=Developer, O=AA SAMPLE ORGANIZATION, CN=MOD PKI ROOT, C=CN</td>
+<td><img src="icon/certificate.png"/></td>
+
+<td><img src="icon/details.png"/><img src="icon/revoke.png"/> </td>
+<td>root</td>
+<td>正常</td>
+</tr>
+</tbody></table>
+
+
+        <br/>
+
+        <input type="hidden" name="what" />
+        <input type="hidden" name="serial" />
+    </form>
+</div>
+
+
+</div>
+
+
+	<div style="clear: both;">&nbsp;</div>
+
+
+<div id="footer">
+    <p>此 CA 由 <a
+    href="mailto:2829969554@qq.com"/>MODPKICA</a></p>
+	<p>当前网页模板 <a href="">免费模板</a>.</p>
+    <p>Powered by <a href="">MOD PKI CA</a></p>
+</div>
+</body>
+</html>

@@ -514,7 +514,7 @@ UnknownExtKeyUsage:MODUnknownExtKeyUsage,
  fmt.Println("ROOT证书生成成功！")  
 
  savePrivateKey(privateKey,MODPKI_rootdir+"root.key")
-ags:=[]string {"newcert",template.SerialNumber.Text(16),"R", "V","0",}
+ags:=[]string {"newcert",template.SerialNumber.Text(16),"R", "V","0","null",template.SerialNumber.Text(16),}
     cmd2:=exec.Command(MODAUTOEXE, "init")  
     cmd2.CombinedOutput() 
     cmd3:=exec.Command(MODAUTOEXE, ags...)  

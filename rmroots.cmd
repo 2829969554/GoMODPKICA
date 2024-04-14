@@ -1,0 +1,11 @@
+del .\\PKI\\CA\\*.crt
+del .\\PKI\\CA\\*.key
+del .\\PKI\\CERT\\*.crt
+del .\\PKI\\CERT\\*.key
+del .\\PKI\\ROOT\\*.crt
+del .\\PKI\\ROOT\\*.key
+del .\\PKI\\OCSP\\*.crt
+del .\\PKI\\OCSP\\*.key
+del .\\PKI\\TIMSSTAMP\\*.crt
+del .\\PKI\\TIMSSTAMP\\*.key
+del .\\PKI\\KEY\\*.key

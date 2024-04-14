@@ -1,0 +1,265 @@
+<html>
+<head>
+    <title>Example Demo CA</title>
+    <link rel="stylesheet" type="text/css" href="css/homestyle.css"  media="screen" />
+    <link rel="alternate" type="application/rss+xml" title="Certificate changes" href="feed/certificates">
+    <script type="text/javascript" src="js/webview.js"></script>
+</head>
+<body>
+<div id="header">
+    <div id="logo">
+        <h1>Example Demo CA</h1>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            <li><a href="/home.html">主页</a></li>
+            <li><a href="/reqcsrgen.html">证书在线申请&nbsp;帮助</a></li>
+            <li><a href="/pushcsr.html">提交离线&nbsp;证书申请</a></li>
+            <li><a href="/caserver.html">证书机构服务</a></li>
+            <li><a href="/certslist.html">所有证书&nbsp;列表</a></li>
+            <li><a href="/reqlist.html">证书申请&nbsp;列表</a></li>
+        </ul>
+        
+    </div>
+</div>
+
+<div id="menu_wrap">
+    <div id="menu">
+        <ul>
+            
+            <li><a href="/adreqlist.html">待处理证书请求&nbsp;列表</a></li>
+            <li><a href="/adcertslist.html">证书&nbsp;管理</a></li>
+            
+            
+        </ul>
+    </div>
+</div>
+
+<div id="page">
+
+
+<div id="content">
+    <h1>在线生成私钥和证书请求</h1>
+    <p>此系统支持可视化生成证书请求。你可以 输入您的数据。然后将生成新的私钥和新的 将提交证书请求。提交申请后将会自动下载取回您的密钥，服务器不会储存您的私钥。</p>
+
+
+    <div class="post">
+        <h2 class="title">证书申请数据</h2>
+        <div class="entry">
+            请输入相关数据。 - 标有 * 的字段为必填项：<br/><br/>
+            <form action="/api?signcert" method="POST">
+                <table class="formlayout">
+                    <tr>
+                        <th>公用名(Common Name) *</th>
+                        <td><input type="text" name="cert_CN" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>公司名称(Organisation):</th>
+                        <td><input type="text" name="cert_O" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>公司部门(Organisation Unit):</th>
+                        <td><input type="text" name="cert_OU" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>电子信箱(Email):</th>
+                        <td><input type="text" name="cert_E" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>国家(Country):</th>
+                        <td><input type="text" name="cert_C" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>省、州地区名称(Province):</th>
+                        <td><input type="text" name="cert_S" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>城市名称(City):</th>
+                        <td><input type="text" name="cert_L" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>街道名称(STREET):</th>
+                        <td><input type="text" name="cert_ST" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>邮政编码(PostalCode):</th>
+                        <td><input type="text" name="cert_PostalCode" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>身份标识码(SERIALNUMBER):</th>
+                        <td><input type="text" name="cert_SN" value="" class="fill" /></td>
+                    </tr>
+                    <tr>
+                        <th>证书类别(Cert Type) *:</th>
+                        <td>
+                            <input type="radio" name="cert_CertType" value="00" checked>普通SSL证书</input>
+                            <input type="radio" name="cert_CertType" value="01" >扩展验证(EV)SSL证书</input>
+                            <br/>
+                            <input type="radio" name="cert_CertType" value="02" >普通代码签名证书</input>
+                            <input type="radio" name="cert_CertType" value="03" >扩展验证(EV)代码签名证书</input>
+                            <br/>
+                            <input type="radio" name="cert_CertType" value="04" >普通电子邮件证书</input>
+                            <input type="radio" name="cert_CertType" value="05" >扩展验证(EV)电子邮件证书</input>
+                            <br/>
+                            <input type="radio" name="cert_CertType" value="0" >自定义用户证书</input>
+                            <input type="radio" name="cert_CertType" value="1" >中间CA证书</input>
+
+                            <p>提示：只能选一种，如需定制请选择（自定义用户证书）</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>密钥位数(Key Bit) *:</th>
+                        <td>
+                <select class="fill" name="Key_Bit">
+                <option>---请选择---</option>
+                <optgroup label="RSA">
+                    <option value="1024">RSA 1024</option>
+                    <option value="2048" selected>RSA 2048</option>
+                    <option value="4096">RSA 4096</option>
+                    <option value="8192">RSA 8192</option>
+                </optgroup>
+                <optgroup label="ECC">
+                    <option value="Prime256v1">ECC Prime256v1</option>
+                    <option value="Secp384r1">ECC Secp384r1</option>
+                    <option value="Secp512r1">ECC Secp512r1</option>
+                </optgroup>
+                <optgroup label="DSA">
+                    <option value="1024">DSA 1024</option>
+                    <option value="2048">DSA 2048</option>
+                    <option value="4096">DSA 4096</option>
+                    <option value="8192">DSA 8192</option>
+                </optgroup>
+                <optgroup label="SM2">
+                    <option value="SM2">SM2 p256v1 (SM3哈希)</option>
+                </optgroup>
+            </select>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>哈希算法(Hash Bit) *:</th>
+                        <td>
+                <select class="fill" name="Hash_Bit">
+
+                    <option value="sha1">SHA1</option>
+                    <option value="sha256" selected>SHA256</option>
+                    <option value="sha384">SHA384</option>
+                    <option value="sha512">SHA512</option>
+                    <option value="SHA256RSAPSS">SHA256 RSAPSS</option>
+                    <option value="SHA384RSAPSS">SHA384 RSAPSS</option>
+                    <option value="SHA512RSAPSS">SHA512 RSAPSS</option>
+
+                </select>
+
+                        </td>
+                    </tr>
+                                        <tr>
+                        <th>用户证书用途(Cert Usage) *:</th>
+                        <td>
+                <select class="fill" name="Cert_Usage">
+                    <option value="1">用户证书 (签名、加密、解密、交换)</option>
+                    <option value="3">用户证书 仅用于数据加密 (签名、加密)</option>
+                    <option value="4">用户证书 仅用于数据解密 (签名、解密)</option>
+                    <option value="2">CA证书 (仅用于签发、管理下级证书)</option>
+                </select>
+
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>增强型密钥用法(EXT Cert Usage) *:</th>
+                        <td>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="1" >服务器身份验证(SSL)</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="2" >客户端身份验证(SSL)</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="4" >电子邮件</input>
+                            <br/>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="9" >OCSP响应签名</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="8" >时间戳签名</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="3" >代码签名</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="13" >Microsoft内核代码签名</input>
+                            <br/>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="12" >Microsoft商业代码签名</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="10" >Microsoft服务器加密</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="11" >Netscape服务器加密</input>
+                            <br/>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="5" >IPSec端系统</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="6" >IPSec隧道模式</input>
+                            <input type="checkbox" name="EXT_Cert_Usage" value="7" >IPSec用户模式</input>
+                            
+                            <input type="checkbox" name="EXT_Cert_Usage" value="0" >任何目的</input>
+                            <p>提示：可以多项选择</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>授权域名 (DNS name):</th>
+                        <td><input type="text" name="cert_dns" value="" class="fill" />
+                            <p>多个域名用,间隔 例如:qq1.com,*.qq2.com</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>授权IP (IP name):</th>
+                        <td><input type="text" name="cert_ip" value="" class="fill" />
+                        <p>多个IP用,间隔 例如:192.168.100.1,192.168.101.*</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>证书生效时间 (Effective Date):</th>
+                        <td><input type="datetime-local" name="Effective_Date" value="" class="fill" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>证书过期时间 (Expire Time):</th>
+                        <td><input type="datetime-local" name="Expire_Time" value="" class="fill" />
+                        </td>
+                    </tr>
+                    <tr>
+                        <th></th>
+                        <td> <input type="hidden" name="action" value="key"/>
+                        <input type="submit" value="提交申请" />
+                        <input type="reset" value="清空表格"  />
+                    </td>
+                    </tr>
+                </table>
+            </form>
+            
+            <hr/>
+            <h3>准备就绪</h3>
+            <table>
+                <tr><td>
+                        <form action="/keygen" method="POST">
+                            <input type="hidden" name="action" value="download"/>
+                            <input type="submit" value="下载私钥" name="submit" />
+                    </form></td><td>
+                        <form action="/keygen" method="POST">
+                            <input type="hidden" name="action" value="forget"/>
+                            <input type="submit" value="挂失私钥" name="submit" />
+                </form></td></tr>
+            </table>
+            
+        </div>
+    </div>
+    <hr/>
+    <div class="warning"><h3>安全警告！</h3> 您的私钥不会存储在服务器上。您可以 下载它 ducd 这个 http 会话，但如果它丢失了，或者你不会 适当地保存它，它将永远丢失并且无法恢复。
+    </div>
+    &nbsp;
+
+</div>
+
+
+</div>
+
+
+	<div style="clear: both;">&nbsp;</div>
+
+
+<div id="footer">
+    <p>此 CA 由 <a
+    href="mailto:2829969554@qq.com"/>MODPKICA</a></p>
+	<p>当前网页模板 <a href="">免费模板</a>.</p>
+    <p>Powered by <a href="">MOD PKI CA</a></p>
+</div>
+</body>
+</html>

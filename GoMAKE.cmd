@@ -19,6 +19,7 @@ go build ADMIN.go
 go build MAKEROOT.go
 go build MAKECERT.go
 go build rootGETcrl.go
+go build -o ./PKI/auto.exe ./PKI/auto.go
 echo 编译结束
 echo 如果没有报错就代表编译成功了
 ::按回车键关闭窗口
