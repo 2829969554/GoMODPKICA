@@ -21,7 +21,7 @@ func main() {
  Addr:      ":8080", // 监听的端口号  
  Handler:   http.HandlerFunc(handleRequest), // 处理请求的函数  
  }  
-httpscert,_:=tls.LoadX509KeyPair("6617e046.crt", "6617e046.key")
+httpscert,_:=tls.LoadX509KeyPair("66249748.crt", "66249748.key")
 cacerts,_:= ioutil.ReadFile("ca.crt") 
 cacertPool := x509.NewCertPool()  
 cacertPool.AppendCertsFromPEM(cacerts) 
@@ -38,7 +38,7 @@ tls.RequireAndVerifyClientCert：表示要求客户端提供证书，并且验�
  Handler:   http.HandlerFunc(handleRequest), // 处理请求的函数  
  TLSConfig: &tls.Config{ // 配置TLS参数  
  Certificates: []tls.Certificate{httpscert}, 
- ClientAuth:tls.RequestClientCert, 
+ ClientAuth:tls.VerifyClientCertIfGiven, 
  ClientCAs:cacertPool,
  InsecureSkipVerify: false,
  },  

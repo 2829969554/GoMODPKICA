@@ -128,7 +128,7 @@ func getmodtimeNow() string {
  // 定义时间格式  不用动我
  modlayout :="2006/01/02-15:04:05" 
 
- return time.Now().Format(modlayout) 
+ return time.Now().Add(-3 * 24 * time.Hour).Format(modlayout) 
 
 
 }

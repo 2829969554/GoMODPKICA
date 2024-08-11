@@ -682,9 +682,9 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
         Critical: false,
         Value:    []byte{0x05,0x00},
     }
-    /*
+    
     // 创建一个OCSP MUST装订扩展
-    ocspmustExtension := pkix.Extension{
+   /* ocspmustExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,5,5,7,1,24},
         Critical: false,
         Value:    []byte{0x30,0x03,0x02,0x01,0x05},
@@ -725,6 +725,7 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     if(CertIsCA==false && len(MODML) >= 6){
         if strings.Contains(MODML[5], "1") || strings.Contains(MODML[5], "2"){
             template.ExtraExtensions=append(template.ExtraExtensions,ctExtension)
+            //template.ExtraExtensions=append(template.ExtraExtensions,ocspmustExtension)
         }
     }
 if(MODML[1]=="initTIMSTAMP"){

@@ -9,3 +9,5 @@ del .\\PKI\\OCSP\\*.key
 del .\\PKI\\TIMSSTAMP\\*.crt
 del .\\PKI\\TIMSSTAMP\\*.key
 del .\\PKI\\KEY\\*.key
+del .\\PKI\\WebPublic\\CRT\\*.crt
+del .\\PKI\\WebPublic\\CRL\\*.crl
