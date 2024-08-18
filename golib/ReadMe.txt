@@ -34,10 +34,7 @@
 	# 2023/12/12 20:40 编写
 	高版本不可选例如go version go1.22.5 windows/amd64 不用复制该文件！！
 	# 2024/08/11 14:52
-<<<<<<< HEAD
-	
-=======
->>>>>>> 722994fcb650c40a365988dcb655e3f48ee66c03
+
 	
 第五.需要将文件夹timestamp复制到%GO_HOME%\src\crypto\目录下，
 	此目录下原本应该没有timestamp文件夹，其他go版本如果有那我也不知道能不能替换。
@@ -45,3 +42,8 @@
 	这是编译时间戳服务RFC3161相关服务必要的GO包
 	我的版本go version go1.20.3 windows/amd64 
 	# 2023/12/12 20:40 编写
+
+第六.将tjfoc文件夹复制到%GO_HOME%\src\目录下面，
+	本库提供SHA3,RIPEMD,SM2,SM3,SM4相关算法支持
+	我的版本go version go1.22.5 windows/amd64
+	# 2024/08/18 14:26 编写
