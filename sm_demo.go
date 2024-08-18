@@ -5,18 +5,31 @@ import (
     "log"
     "crypto/rand"
     "tjfoc/gmsm/x509"
+    //oldx509 "crypto/x509"
     "crypto/x509/pkix"
     "encoding/pem"
     "math/big"
     "time"
+    "io/ioutil"
     "tjfoc/gmsm/sm2"
 )
+
 
 func GenerateSM2Key() *sm2.PrivateKey {
     privateKey, err := sm2.GenerateKey(rand.Reader)
     if err != nil {
         log.Fatalf("failed to generate private key: %v", err)
     }
+        // 将SM2私钥编码为DER格式
+    data,err:=x509.WritePrivateKeyToPem(privateKey,nil)
+
+    if err != nil {
+        panic(err)
+    }else{
+        ioutil.WriteFile("sm2.pem", data, 0644)
+    }
+    
+
     return privateKey
 }
 
@@ -50,5 +63,6 @@ func CreateSelfSignedSM2Certificate(key *sm2.PrivateKey) []byte {
 func main() {
     eccKey := GenerateSM2Key()
     certBytes := CreateSelfSignedSM2Certificate(eccKey)
-    fmt.Printf("ECC Certificate:\n%s\n", certBytes)
+    fmt.Printf("SM2 Certificate:\n%s\n", certBytes)
+    ioutil.WriteFile("sm2.crt", certBytes, 0644)
 }

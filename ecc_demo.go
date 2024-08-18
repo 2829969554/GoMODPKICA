@@ -6,11 +6,13 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
+	"io/ioutil"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"math/big"
 	"time"
+	"os"
 )
 func GenerateECCKey() *ecdsa.PrivateKey {
 	curve := elliptic.P521() // 选择曲线
@@ -18,6 +20,31 @@ func GenerateECCKey() *ecdsa.PrivateKey {
 	if err != nil {
 		log.Fatalf("failed to generate private key: %v", err)
 	}
+		// 将私钥编码为 DER 格式
+	derBytes ,_:= x509.MarshalECPrivateKey(privateKey)
+
+	// 创建 PEM 块
+	pemBlock := pem.Block{
+		Type:  "EC PRIVATE KEY",
+		Bytes: derBytes,
+	}
+
+	// 创建文件并写入 PEM 块
+	fileName := "ecc.pem"
+	file, err := os.Create(fileName)
+	if err != nil {
+		panic(err)
+	}
+	defer file.Close()
+
+	// 编码 PEM 并写入文件
+	err = pem.Encode(file, &pemBlock)
+	if err != nil {
+		panic(err)
+	}
+
+	// 输出保存成功的消息
+	println("Private key saved to:", fileName)
 	return privateKey
 }
 
@@ -53,4 +80,5 @@ func main() {
 	eccKey := GenerateECCKey()
 	certBytes := CreateSelfSignedECCCertificate(eccKey)
 	fmt.Printf("ECC Certificate:\n%s\n", certBytes)
+	ioutil.WriteFile("ecc.crt", certBytes, 0644)
 }
