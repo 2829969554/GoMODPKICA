@@ -43,6 +43,11 @@ func CreateSelfSignedSM2Certificate(key *sm2.PrivateKey) []byte {
             Locality:      []string{"San Francisco"},
             StreetAddress: []string{"Golden Gate Bridge"},
             PostalCode:    []string{"94107"},
+            EVCT: []string{"CN"},
+            EVCITY: []string{"BEI JING"},
+            EVTYPE: []string{"Private Organization"},
+            EMAIL:[]string{"2829969554@qq.com"},
+            SerialNumber:"123456789",
         },
         NotBefore: time.Now(),
         NotAfter:  time.Now().AddDate(1, 0, 0), // 证书有效期1年
