@@ -15,10 +15,10 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/tjfoc/gmsm/sm2"
-	"github.com/tjfoc/gmsm/sm3"
-	"github.com/tjfoc/gmsm/sm4"
-	"github.com/tjfoc/gmsm/x509"
+	"tjfoc/gmsm/sm2"
+	"tjfoc/gmsm/sm3"
+	"tjfoc/gmsm/sm4"
+	"tjfoc/gmsm/x509"
 )
 
 const VersionGMSSL = 0x0101 // GM/T 0024-2014

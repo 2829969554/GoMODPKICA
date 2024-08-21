@@ -5,7 +5,7 @@ import (
 	"crypto/cipher"
 	"crypto/rand"
 	"fmt"
-	"github.com/tjfoc/gmsm/sm4"
+	"tjfoc/gmsm/sm4"
 	"testing"
 )
 
