@@ -8,10 +8,12 @@ import (
     //oldx509 "crypto/x509"
     "crypto/x509/pkix"
     "encoding/pem"
+    "encoding/asn1"
     "math/big"
     "time"
     "io/ioutil"
     "tjfoc/gmsm/sm2"
+    "net"
 )
 
 
@@ -51,7 +53,15 @@ func CreateSelfSignedSM2Certificate(key *sm2.PrivateKey) []byte {
         },
         NotBefore: time.Now(),
         NotAfter:  time.Now().AddDate(1, 0, 0), // 证书有效期1年
-
+        DNSNames:[]string{"anqikeji.picp.net","localhost",},
+        IPAddresses:[]net.IP{net.ParseIP("127.0.0.1"),},
+        IsCA:false,
+        BasicConstraintsValid: true,
+        ExtKeyUsage:[]x509.ExtKeyUsage{1,2,3,4,5,6,7,},
+        KeyUsage:1|4|8|16,
+        PolicyIdentifiers: []asn1.ObjectIdentifier{{2,23,140,1,3},{2,23,140,1,1},}, 
+      //  AuthorityKeyId:1,
+      //  SubjectKeyId:1,
         // 可以添加更多的字段，如KeyUsage、ExtKeyUsage等
     }
 
