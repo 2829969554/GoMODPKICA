@@ -82,6 +82,10 @@ VERSION ---------------------------------查看当前MODPKICA版本号
 最新版本: MODPKICA20240818
 
 更新日志：
+		2024年08月21日 21:41
+		1.加入生成 ECC证书吊销列表，SM2证书吊销列表的功能
+		2.例子 makecrlofsmecc.cmd一键启动编译 ecccrl.go smcrl.go 基于上次更新demo_ecc demo_sm的国密证书
+
 		2024年08月18日 14:40
 		1.加入ECC算法 P256 P384 P512 
 		2.加入国密算法 SM2 SM3 SM4 等...
