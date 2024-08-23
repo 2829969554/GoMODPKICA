@@ -47,3 +47,7 @@
 	本库提供SHA3,RIPEMD,SM2,SM3,SM4相关算法支持
 	我的版本go version go1.22.5 windows/amd64
 	# 2024/08/18 14:26 编写
+第七.将modcrypto文件夹复制到%GO_HOME%\src\目录下面，
+	本库提供NEW SHA3,RIPEMD,SM2,SM3,SM4相关算法支持
+	我的版本go version go1.22.5 windows/amd64
+	# 2024/08/23 23:16 编写
