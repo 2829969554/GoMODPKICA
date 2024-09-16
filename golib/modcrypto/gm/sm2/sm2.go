@@ -11,6 +11,8 @@ import (
     "crypto/rand"
     "crypto/subtle"
     "crypto/elliptic"
+   // "encoding/hex"
+
 
     "modcrypto/hash/sm3"
     "modcrypto/kdf/smkdf"
@@ -636,7 +638,7 @@ func SignToRS(random io.Reader, priv *PrivateKey, msg []byte, opts crypto.Signer
     if err != nil {
         return nil, nil, err
     }
-
+    //fmt.Println("WOWOWO",hex.EncodeToString(hashed))
     return sign(random, priv, hashed)
 }
 

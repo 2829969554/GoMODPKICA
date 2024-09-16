@@ -232,7 +232,7 @@ func CreateCertificate(template, parent *Certificate, publicKey *sm2.PublicKey, 
 	default:
 		h := hashFunc.New()
 		h.Write(tbsCertContents)
-		digest = h.Sum(nil)
+		//digest = h.Sum(nil)
 	}
 
 	var signerOpts crypto.SignerOpts

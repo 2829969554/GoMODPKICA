@@ -410,7 +410,7 @@ const (
 // RFC 3279 2.2.3 ECDSA Signature Algorithm
 //
 // ecdsa-with-SHA1 OBJECT IDENTIFIER ::= {
-// 	  iso(1) member-body(2) us(840) ansi-x962(10045)
+//    iso(1) member-body(2) us(840) ansi-x962(10045)
 //    signatures(4) ecdsa-with-SHA1(1)}
 //
 //
@@ -2587,7 +2587,7 @@ func (c *Certificate) ToX509Certificate() *x509.Certificate {
 
         UnhandledCriticalExtensions: c.UnhandledCriticalExtensions,
 
-        //ExtKeyUsage:	[]x509.ExtKeyUsage(c.ExtKeyUsage) ,
+        //ExtKeyUsage:  []x509.ExtKeyUsage(c.ExtKeyUsage) ,
         UnknownExtKeyUsage: c.UnknownExtKeyUsage,
 
         BasicConstraintsValid: c.BasicConstraintsValid,
@@ -2754,7 +2754,7 @@ func CreateCertificate(rand io.Reader, template, parent *Certificate, publicKey 
             if hashFunc != 0 {
                 h := hashFunc.New()
                 h.Write(tbsCertContents)
-                digest = h.Sum(nil)
+                //digest = h.Sum(nil)
             }
     }
 
