@@ -16,6 +16,38 @@ type SCT struct {
     Signtype int //0:anonymous 1:RSA  2：DSA  3:ECDSA
     Signature []byte    // SCT 签名 ECDSA签名长度70，字符串长度140
 }
+//根据参数生成SCT字节集 
+//成功:status 返回true data:Raw
+//失败 status 返回false data：{0}
+func (thisSCT *SCT) CreateSCT()(status bool,data []byte){
+	var mybyte []byte
+	longer:= 0
+	longer += len(thisSCT.Signature) +1  //签名70 + 00 1 
+	//longer += len(thisSCT.Signtype) + len(thisSCT.Hash) +1
+	longer += 1 + 1 +1+1 //算法长度 1 + 类型长度 1 + 00 1  + 00 1 
+	hexstr,_:= hex.DecodeString("0" + strconv.FormatUint(thisSCT.Timestamp, 16))
+	longer += len(hexstr) +1+1  //时间戳13  + 00 1 + 00 1 
+	longer += len(thisSCT.LogID) 
+	longer += 1 //版本号长度
+	//longer += 1 //SCT长度  0首位是SCT长度不算，预留
+	mybyte = append(mybyte,byte(longer)) //追加长度
+	mybyte = append(mybyte,0x00) 	//追加版本号
+	mybyte = append(mybyte,(thisSCT.LogID)...)	//追加logid
+	mybyte = append(mybyte,0x00) 	//追加 00
+	mybyte = append(mybyte,0x00) 	//追加 00
+	mybyte = append(mybyte,hexstr...) 	//追加 时间戳
+	mybyte = append(mybyte,0x00) 	//追加 00
+	mybyte = append(mybyte,0x00) 	//追加 00
+	mybyte = append(mybyte,byte(thisSCT.Hash)) 	//追加哈希方法
+	mybyte = append(mybyte,byte(thisSCT.Signtype)) 	//追加签名方法
+	mybyte = append(mybyte,0x00) 	//追加 00
+	mybyte = append(mybyte,(thisSCT.Signature)...)	//追加Signature
+	if(len(mybyte)-1== longer){  //这里-1是因为0首位是SCT长度，已经提前预留
+		thisSCT.Raw = mybyte
+		return true,mybyte
+	}
+	return false,[]byte{0}
+}
 
 //解析单独子SCT
 func (thisSCT *SCT) Parse(sct []byte) (err bool){
@@ -59,7 +91,41 @@ type SCTList struct{
 	SCTListlenth   int 		//当前SCTList总长度
 	SCTs		   []SCT 	//SCT数组
 }
+//根据现有SCT生成符合条件的SCT列表
+func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
+	var mybyte,mybyte2,mybyte3 []byte
+	langer := 0
+	for _, sct := range thisSCT.SCTs {
+		a,b := sct.CreateSCT()
+		langer += len(b)
+		if(a == false){
+			fmt.Println("出错了 CreateSCTList函数中 sct.CreateSCT()")
+			return false,[]byte{0}
+		}
+		mybyte = append(mybyte,0x00)
+		mybyte = append(mybyte,b...)
+	}
 
+	mybyte2 = append(mybyte2,0x00)
+	langer += 1
+	mybyte2 = append(mybyte2,byte(langer))
+	mybyte2 = append(mybyte2,mybyte...)
+	langer += 1
+	mybyte3 = append(mybyte3,0x04)
+	mybyte3 = append(mybyte3,0x82)
+	mybyte3 = append(mybyte3,0x00)
+	langer += 1
+	mybyte3 = append(mybyte3,byte(langer))
+	mybyte3 = append(mybyte3,mybyte2...)
+
+	//fmt.Println(hex.EncodeToString(mybyte3),len(mybyte3),langer)
+	if(len(mybyte3)-4 == langer){  //这里-4是因为 0x04 0x82 0x00 0xlanger 头部预留4位置
+		thisSCT.Raw = mybyte3
+		return true,mybyte3
+	}
+	return false,[]byte{0}
+}
+//解析SCT列表 签名证书列表
 func (thisSCTlist *SCTList) Parse (mysctlist []byte)(err bool){
 	thisSCTlist.Raw= mysctlist
 	rows := SplitWithDelimiter(mysctlist,0x00)
@@ -128,8 +194,9 @@ func SplitWithDelimiter(b []byte, delimiter byte) [][]byte {
 
 	return parts
 }
-
+/*
 func main(){
+
 	mysct := []byte{0x75,0x00,0x12,0xF1,0x4E,0x34,0xBD,0x53,0x72,0x4C,0x84,0x06,0x19,0xC3,0x8F,0x3F,0x7A,0x13,0xF8,0xE7,0xB5,0x62,0x87,0x88,0x9C,0x6D,0x30,0x05,0x84,0xEB,0xE5,0x86,0x26,0x3A,0x00,0x00,0x01,0x91,0x44,0xA4,0xE4,0x5E,0x00,0x00,0x04,0x03,0x00,0x46,0x30,0x44,0x02,0x20,0x42,0xEE,0x56,0xF3,0x66,0x3B,0x32,0xA6,0xDD,0xF1,0x50,0x47,0x81,0xC2,0xF2,0x17,0x80,0x3D,0x5C,0x12,0x13,0x2F,0x4A,0x99,0x3F,0xE5,0x5F,0x86,0x29,0xDC,0xDD,0x59,0x02,0x20,0x70,0x47,0xE0,0x87,0xFA,0xA3,0xA6,0x11,0xBB,0x8D,0x0D,0xE1,0x98,0xCC,0xFA,0x01,0xB2,0x65,0xDC,0x0F,0x6C,0x7C,0x63,0x92,0xD8,0x48,0xAD,0x32,0xFD,0x4E,0xCB,0x1E}
 	var thisSCT SCT
 	
@@ -161,3 +228,4 @@ func main(){
 		fmt.Println(fmt.Sprintf("第%d组SCT\nSCT长度：%d\nLOG版本号(0: V1):%d\nLogID：%X\n时间戳:%d\n哈希算法(SHA256):%d\n签名算法(ECDSA):%d\n签名：%x\n",i,sct.SCTlenth,sct.Version,sct.LogID,sct.Timestamp,sct.Hash,sct.Signtype,sct.Signature))
 	}
 }
+*/

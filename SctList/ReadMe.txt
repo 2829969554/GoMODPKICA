@@ -6,8 +6,10 @@ b.sct 从 b.crt文件中提取出来的
 c.sct 从 c.crt文件中提取出来的
 
 sct.go
-
 本代码实现  SSL域名证书中的SCT列表   SCT签名证书列表 解析为可视化数据的功能
+
+makesct.go
+本代码实现实时生成 签发SCT列表   签发SCT签名证书列表 的功能
 
 // SCT 代表一个 Signed Certificate Timestamp 的结构
 type SCT struct {
@@ -21,6 +23,7 @@ type SCT struct {
     Signature []byte    // SCT 签名 ECDSA签名长度70，字符串长度140
 }
 此SCT编写了 Parse方法，用于解析现有字节集类型的子SCT节数据
+此SCT编写了 CreateSCT方法，用于将SCT对象转换成SCT字节集
 
 //时间戳列表，一般包含3组数据，目前不支持2组数据解析
 type SCTList struct{
@@ -29,10 +32,10 @@ type SCTList struct{
 	SCTs		   []SCT 	//SCT数组
 }
 此SCTList编写了 Parse方法，用于解析现有字节集类型的SCT列表数据
+此SCTList编写了 CreateSCTList方法，用于将SCTList对象转换成字节集类型的SCT列表数据
 
 
-
-实验效果:详见 sct.exe 输出如下
+实验效果1:详见 sct.exe 输出如下
 
 1.单独的SCT一节数据
 
@@ -117,4 +120,14 @@ type SCTList struct{
 	哈希算法(SHA256):4
 	签名算法(ECDSA):3
 	签名：473045022005e6feeaeecdaa4e3d085c5a504d00424f6559b292da862ed67fb4d8552f934d022100f798795584907bdbbea05db835abf27a41817d6050b25596629d087b515dc024
-2024 年 10 月 6 日 16:36
+
+实验效果2:详见 makesct.exe 将SCTList对象转hex字符串 输出如下
+
+SCT列表数据生成成功
+ 04820079007700750012f14e34bd53724c840619c38f3f7a13f8e7b56287889c6d300584ebe586263a00000192620ca5400000040300463044022042ee56f3663b32a6ddf1504781c2f217803d5c12132f4a993fe55f8629dcdd5902207047e087faa3a611bb8d0de198ccfa01b265dc0f6c7c6392d848ad32fd4ecb1e
+
+openssl x509 v3扩展配置
+ ct_precert_scts=DER:04:82:00:79:00:77:00:75:00:12:f1:4e:34:bd:53:72:4c:84:06:19:c3:8f:3f:7a:13:f8:e7:b5:62:87:88:9c:6d:30:05:84:eb:e5:86:26:3a:00:00:01:92:62:0c:a5:40:00:00:04:03:00:46:30:44:02:20:42:ee:56:f3:66:3b:32:a6:dd:f1:50:47:81:c2:f2:17:80:3d:5c:12:13:2f:4a:99:3f:e5:5f:86:29:dc:dd:59:02:20:70:47:e0:87:fa:a3:a6:11:bb:8d:0d:e1:98:cc:fa:01:b2:65:dc:0f:6c:7c:63:92:d8:48:ad:32:fd:4e:cb:1e
+
+
+2024 年 10 月 6 日 21:38
