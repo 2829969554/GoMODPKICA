@@ -16,7 +16,7 @@ import (
     "modcrypto/gm/sm2"
     "modcrypto/hash/sm3"
     "net"
-    //"encoding/hex"
+    "encoding/hex"
     "encoding/binary"
     "os"
     "io"
@@ -254,7 +254,7 @@ mycps:= pkix.Extension{}
             mycps.Id= asn1.ObjectIdentifier{2,5,29,32}
             mycps.Critical= false
             mycps.Value = GenerateCPSbyte([]asn1.ObjectIdentifier{{2,23,140,1,4,1},{2,23,140,1,4,2},{2,23,140,1,4,3},{2,23,140,1,4,4}},cpsURL,cpsTEXT)
-  
+
     template := x509.Certificate{
         SerialNumber:randomInt , // 序列号
         Subject: pkix.Name{
@@ -290,8 +290,63 @@ mycps:= pkix.Extension{}
                                                     {2,23,140,1,1},
                                                 }, 
         */
+
     }
 
+    var mysctlist SCTList
+    var mysct SCT
+    mysct.Version = 0
+    mysct.LogID = sm3sign[:]
+    mysct.Timestamp = uint64(time.Now().UTC().UnixMilli())
+    mysct.Hash = 4
+    mysct.Signtype = 3
+    mysct.Signature,_ = sm2.Sign(nil,key,sm3sign[:],nil)
+
+    var tmp []byte
+    //SM2签名长度只有这4种  根据数量补充参数
+    if(len(mysct.Signature)==69){
+        tmp = append(tmp,0x45)
+    }
+    if(len(mysct.Signature)==70){
+        tmp = append(tmp,0x46)
+    }    
+    if(len(mysct.Signature)==71){
+        tmp = append(tmp,0x47)
+    }  
+    if(len(mysct.Signature)==72){
+        tmp = append(tmp,0x48)
+    } 
+    tmp = append(tmp,mysct.Signature...)
+    mysct.Signature = tmp
+    fmt.Println("长度",len(mysct.Signature),hex.EncodeToString(mysct.Signature))
+    
+    mysctlist.SCTs = append(mysctlist.SCTs,mysct)
+
+    a,b:= mysctlist.CreateSCTList()
+                fmt.Print("\nopenssl x509 v3扩展配置\n ct_precert_scts=DER:")
+                for i := 0; i < len(b); i++ {
+                    str := fmt.Sprintf("%x",b[i])
+                    if(len(str) < 2){
+                        str = "0" + str
+                    }
+                    
+                    if(len(b)-1 == i){
+                        fmt.Print(str)
+                    }else{
+                        fmt.Print(str,":")
+                    }
+                }
+    fmt.Println("\n\n",a,b)
+      // 创建一个CT扩展 证书透明度
+    ctExtension := pkix.Extension{
+        Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 2},
+        Critical: false,
+        Value: b   ,
+        }
+    //向证书模板加入证书透明度信息
+    template.ExtraExtensions = []pkix.Extension{
+       ctExtension,
+    }
     derBytes, err := x509.CreateCertificate(rand.Reader,&template, &template, &key.PublicKey, key)
     if err != nil {
         log.Fatalf("Failed to create certificate: %v", err)

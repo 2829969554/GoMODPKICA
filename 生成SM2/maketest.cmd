@@ -1,5 +1,5 @@
 @echo off
-go build sm_demo.go
+go build sm_demo.go sct.go
 go build sm2verify.go
 go build smcrl.go
 call  sm_demo.exe
