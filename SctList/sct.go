@@ -4,6 +4,8 @@ import(
 	"encoding/hex"
 	"strconv"
 )
+//更新日期：2024年10月19日18时
+
 
 // SCT 代表一个 Signed Certificate Timestamp 的结构
 type SCT struct {
@@ -20,6 +22,28 @@ type SCT struct {
 //成功:status 返回true data:Raw
 //失败 status 返回false data：{0}
 func (thisSCT *SCT) CreateSCT()(status bool,data []byte){
+
+	//fmt.Println("head 1:",thisSCT.Signature[0])
+    var tmp []byte
+    	//如果首位是十六进制字符串“30”|整数48，说明缺少长度头信息，需要此函数填充签名
+	    if(thisSCT.Signature[0] == 48){
+	    //SM2签名长度只有这4种  根据数量补充参数
+	    if(len(thisSCT.Signature)==69){
+	        tmp = append(tmp,0x45)
+	    }
+	    if(len(thisSCT.Signature)==70){
+	        tmp = append(tmp,0x46)
+	    }    
+	    if(len(thisSCT.Signature)==71){
+	        tmp = append(tmp,0x47)
+	    }  
+	    if(len(thisSCT.Signature)==72){
+	        tmp = append(tmp,0x48)
+	    } 
+	    tmp = append(tmp,thisSCT.Signature...)
+	    thisSCT.Signature = tmp
+    }
+
 	var mybyte []byte
 	longer:= 0
 	longer += len(thisSCT.Signature) +1  //签名70 + 00 1 
@@ -44,6 +68,7 @@ func (thisSCT *SCT) CreateSCT()(status bool,data []byte){
 	mybyte = append(mybyte,(thisSCT.Signature)...)	//追加Signature
 	if(len(mybyte)-1== longer){  //这里-1是因为0首位是SCT长度，已经提前预留
 		thisSCT.Raw = mybyte
+		thisSCT.SCTlenth = len(mybyte)
 		return true,mybyte
 	}
 	return false,[]byte{0}
@@ -89,7 +114,7 @@ func (thisSCT *SCT) Parse(sct []byte) (err bool){
 type SCTList struct{
 	Raw			   []byte	//SCTList结构体对应字节集
 	SCTListlenth   int 		//当前SCTList总长度
-	SCTs		   []SCT 	//SCT数组
+	SCTs		   []SCT 	//SCT数组  目前最大成员数为3，不能超过3组SCT，否则无法识别
 }
 //根据现有SCT生成符合条件的SCT列表
 func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
@@ -104,25 +129,61 @@ func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
 		}
 		mybyte = append(mybyte,0x00)
 		mybyte = append(mybyte,b...)
-	}
 
-	mybyte2 = append(mybyte2,0x00)
-	langer += 1
-	mybyte2 = append(mybyte2,byte(langer))
+	}
+	fmt.Println("len:",langer)
+	if(langer > 255){
+		//3组SCT信息
+		mybyte2 = append(mybyte2,0x01)
+		langer += 1
+		mybyte2 = append(mybyte2,byte((langer % 255) + 1))
+	}else{
+		mybyte2 = append(mybyte2,0x00)
+		langer += 1		
+		if(langer < 128){
+			//1组SCT信息
+			mybyte2 = append(mybyte2,byte(langer))
+		}else{
+			//2组SCT信息
+			mybyte2 = append(mybyte2,byte(langer+1))
+		}
+	}
+	
+	
+	
 	mybyte2 = append(mybyte2,mybyte...)
 	langer += 1
 	mybyte3 = append(mybyte3,0x04)
 	mybyte3 = append(mybyte3,0x82)
-	mybyte3 = append(mybyte3,0x00)
-	langer += 1
-	mybyte3 = append(mybyte3,byte(langer))
+	if(langer > 255){
+		//3组SCT信息
+		mybyte3 = append(mybyte3,0x01)
+		langer += 1
+		mybyte3 = append(mybyte3,byte((langer % 255) + 1))
+	}else{
+		mybyte3 = append(mybyte3,0x00)
+		langer += 1
+		if(langer < 128){
+			//1组SCT信息
+			mybyte3 = append(mybyte3,byte(langer))
+		}else{
+			//2组SCT信息
+			mybyte3 = append(mybyte3,byte(langer+1))
+		}
+		
+	}
+	
+	
+	
 	mybyte3 = append(mybyte3,mybyte2...)
 
 	//fmt.Println(hex.EncodeToString(mybyte3),len(mybyte3),langer)
-	if(len(mybyte3)-4 == langer){  //这里-4是因为 0x04 0x82 0x00 0xlanger 头部预留4位置
+	if(len(mybyte3)-4 - (len(thisSCT.SCTs) - 1) == langer){  //这里-4是因为 0x04 0x82 0x00 0xlanger 头部预留4位置
 		thisSCT.Raw = mybyte3
+		thisSCT.SCTListlenth = len(mybyte3)
 		return true,mybyte3
 	}
+	fmt.Println("Error in sct.go 126 Code:",len(mybyte3),langer)
 	return false,[]byte{0}
 }
 //解析SCT列表 签名证书列表
