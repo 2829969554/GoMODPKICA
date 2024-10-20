@@ -2,10 +2,25 @@ package main
 import(
 	"fmt"
 	"encoding/hex"
+	"crypto/rand"
 	"strconv"
 )
 //更新日期：2024年10月19日18时
 
+//模拟生成随机SCT的签名参数值 仅用于生成测试证书  无法通过算法验证签名
+func SCTGenerateSignature()(data []byte){
+	tmp := []byte{}
+	tmp = append(tmp,[]byte{0x46,0x30,0x44,0x02,0x20}...)
+    a := make([]byte, 32)
+    rand.Read(a)
+    tmp = append(tmp,a...)
+
+    tmp = append(tmp,[]byte{0x02,0x20}...)
+    b := make([]byte, 32)
+    rand.Read(b)
+    tmp = append(tmp,b...)
+    return tmp
+}
 
 // SCT 代表一个 Signed Certificate Timestamp 的结构
 type SCT struct {
