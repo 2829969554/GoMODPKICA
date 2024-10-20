@@ -124,9 +124,9 @@ func CreateSelfSignedSM2Certificate(key *sm2.PrivateKey) []byte {
         //将2组SCT结构套在一起
         SCTs: []SCT{mysct,mysct},
     }
-
     //生成SCT列表 ASN.1数据  status是状态True|False   sctans1data为 SCT列表的ASN.1数据
     status,sctans1data:= mysctlist.CreateSCTList()
+
     fmt.Print("openssl x509 v3扩展配置\n ct_precert_scts=DER:")
     for i := 0; i < len(sctans1data); i++ {
         str := fmt.Sprintf("%x",sctans1data[i])
