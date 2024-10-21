@@ -1,2 +1,0 @@
-https://139.170.148.72/vpn/user/auth/cert
-https://139.170.148.72/vpn/user/auth/home

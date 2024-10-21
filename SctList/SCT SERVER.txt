@@ -1,7 +1,0 @@
-POST
-/ct/v1/add-chain
-/ct/v1/add-pre-chain
-
-GET
-/ct/v1/get-sth
-/ct/v1/get-roots
