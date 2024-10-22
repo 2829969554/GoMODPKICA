@@ -343,6 +343,16 @@ if(Keyalgorithm =="ECC"){
  CERTID:=big.NewInt(90000000000000000 + time.Now().UTC().Unix())
  //使用者证书类型 true为CA，false为最终实体
  CertIsCA:=true
+
+ /* 
+ 零信浏览器WIN插件不支持第三方自签名SM2 CA，会显示签名异常
+ 但是支持NoCA,Subject Type=End Entity
+ 然后将证书添加进受信任人就能正常显示
+if(Keyalgorithm =="SM2"){
+    CertIsCA=false
+}
+*/
+
  // 签发日期
  modqianfaTime := "2001-07-19 15:30:00"  
  //过期时间

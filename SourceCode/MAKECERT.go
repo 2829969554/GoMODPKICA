@@ -326,22 +326,31 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
 if(MODML[1] != "initOCSP" && MODML[1] != "initTIMSTAMP"){
     switch MODML[3] {  
     case "sha1":  
-        roothash=3
+        if(RootKeyalgorithm=="RSA"){
+            roothash=3
+        }
         if(RootKeyalgorithm=="ECC"){
            roothash=9 
         }
+
     case "sha256":  
-        roothash=4 
+        if(RootKeyalgorithm=="RSA"){
+            roothash=4
+        }
         if(RootKeyalgorithm=="ECC"){
            roothash=10 
         }
     case "sha384":  
-        roothash=5
+        if(RootKeyalgorithm=="RSA"){
+            roothash=5
+        }
         if(RootKeyalgorithm=="ECC"){
            roothash=11 
         }
     case "sha512":  
-        roothash=6
+        if(RootKeyalgorithm=="RSA"){
+            roothash=6
+        }
         if(RootKeyalgorithm=="ECC"){
            roothash=12 
         }
@@ -351,10 +360,38 @@ if(MODML[1] != "initOCSP" && MODML[1] != "initTIMSTAMP"){
         roothash=14 
     case "SHA512RSAPSS":  
         roothash=15 
-    case "SM3":  
-        roothash=0
+    case "SM3": 
+        if(RootKeyalgorithm=="RSA"){
+            roothash=4
+        }
+        if(RootKeyalgorithm=="ECC"){
+           roothash=10 
+        }
+        if(RootKeyalgorithm=="SM2"  || RootKeyalgorithm=="SM3" ){
+            roothash=sm2x509.SM2WithSM3
+        }
+        
+    case "SM2": 
+        if(RootKeyalgorithm=="RSA"){
+            roothash=4
+        }
+        if(RootKeyalgorithm=="ECC"){
+           roothash=10 
+        }
+        if(RootKeyalgorithm=="SM2"  || RootKeyalgorithm=="SM3" ){
+            roothash=sm2x509.SM2WithSM3
+        }
     default:  
-        roothash=3
+        if(RootKeyalgorithm=="RSA"){
+            roothash=3
+        }
+        if(RootKeyalgorithm=="ECC"){
+           roothash=9 
+        }
+    }
+
+    if(RootKeyalgorithm=="SM2"){
+       roothash=sm2x509.SM2WithSM3
     }
 }
 
@@ -442,48 +479,132 @@ if(MODML[1] == "initOCSP" || MODML[1] == "initTIMSTAMP"){
  MODKbit:=certkeybit
 
 if(MODML[1]=="initOCSP" || MODML[1] == "initTIMSTAMP"){
-    if(CertKeyalgorithm == "RSA"){
-        MODKbit=2048 
-        roothash=3 
-    }
-    if(CertKeyalgorithm == "ECC"){
-        MODKbit=256 
-        roothash=10 
-    }
-    if(CertKeyalgorithm == "SM2"){
-        MODKbit=256
-    }
+
     MODname = pkix.Name{} 
     MODname.CommonName = rootcert.Subject.CommonName+" By OCSP"
     MODname.Organization=rootcert.Subject.Organization
     MODname.OrganizationalUnit= []string{"Only OCSP Signing"} 
+    //初始化时间戳证书签名算法配置 默认RSAwithsha1  ECDSAwithsha1  SM2withSM3
+    if(MODML[1]=="initOCSP"){
+        if(CertKeyalgorithm == "RSA"){
+            MODKbit=2048 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
+        }
+        if(CertKeyalgorithm == "ECC"){
+            MODKbit=256 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
+        }
+        if(CertKeyalgorithm == "SM2"){
+            MODKbit=256
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
+        }
+
+    }
+
+    //初始化时间戳证书签名算法配置 SHA1类型 默认RSAwithsha1  ECDSAwithsha1  SM2withSM3 | SHA2类型 默认RSAwithsha256  ECDSAwithsha256  SM2withSM3
     if(MODML[1] == "initTIMSTAMP" && MODML[2] == "SHA1"){
 
         if(CertKeyalgorithm=="ECC"){
-           roothash=9 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
         }
         if(CertKeyalgorithm=="RSA"){
-           roothash=3 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
         }
-
+        if(CertKeyalgorithm=="SM2"){
+            if(RootKeyalgorithm=="RSA"){
+                roothash=3
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=9
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
+        }
         MODname.OrganizationalUnit= []string{"Only TSA SHA1 Signing"} 
         MODname.CommonName = rootcert.Subject.CommonName+" By Timstamp SHA1"
     }
     if(MODML[1] == "initTIMSTAMP" && MODML[2] == "SHA256"){
 
         if(CertKeyalgorithm=="ECC"){
-           roothash=10 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=4
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=10
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
         }
         if(CertKeyalgorithm=="RSA"){
-           roothash=4 
+            if(RootKeyalgorithm=="RSA"){
+                roothash=4
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=10
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
         }
-
+        if(CertKeyalgorithm=="SM2"){
+            if(RootKeyalgorithm=="RSA"){
+                roothash=4
+            }
+            if(RootKeyalgorithm=="ECC"){
+                roothash=10
+            }
+            if(RootKeyalgorithm=="SM2"){
+                roothash=sm2x509.SM2WithSM3
+            }
+        }
         MODname.OrganizationalUnit= []string{"Only TSA SHA256 Signing"} 
         MODname.CommonName = rootcert.Subject.CommonName+" By Timstamp SHA256"
     }
 }
 
-
+fmt.Println("信息比对：",RootKeyalgorithm,CertKeyalgorithm,CertKeyalgorithm == RootKeyalgorithm,roothash) 
 
 fmt.Println("密钥长度：",MODKbit)  
 
@@ -721,13 +842,15 @@ if(len(MODML)>=10){
     //12  ECDSAWithSHA512
     //签名算法
 
- MODsuanfa:=MODx509.SignatureAlgorithm
+MODx509.SignatureAlgorithm=roothash
+MODsuanfa:=MODx509.SignatureAlgorithm
 
+/*
  if(RootKeyalgorithm != "SM2"){
     MODx509.SignatureAlgorithm=roothash
     MODsuanfa=MODx509.SignatureAlgorithm
  }
-
+*/
  //fmt.Println(MODsuanfa)
  //密钥用途
       //1    x509.KeyUsageDigitalSignature
@@ -1051,6 +1174,9 @@ if(MODML[1]=="initTIMSTAMP"){
         cpsExtension,
         }
 } 
+
+fmt.Println("我的要使用的算法",template.SignatureAlgorithm)
+
  // 使用证书模板和RSA密钥对生成证书  
 /* 颁发者  使用者组合，交叉签发证书实现
 1: RSA  RSA   2.RSA ECC  3.RSA SM2

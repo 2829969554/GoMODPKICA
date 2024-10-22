@@ -100,6 +100,10 @@ VERSION ---------------------------------查看当前MODPKICA版本号
 
 更新日志：
 
+		2024年10月22日 19:30
+		1.修复关于交叉签名时一些小BUG 
+		  具体表现为 SM2证书不能以SM2withSM3不能为RSA和ECC进行交叉签名 得签名算法得使用使SM2withSHA1 或者SM2withSHA256
+
 		2024年10月21日 23:56
 		1.兼容RSA ECC SM2 SM2 证书修复签名错误的BUG
 		2.修复BUG 修复代码兼容SM2时RSA创建失败的问题
@@ -109,7 +113,7 @@ VERSION ---------------------------------查看当前MODPKICA版本号
 		6.admin.go 控制台signCert流程支持交叉签名,交叉认证   1. RSA->ECC RSA->SM2 RSA->RSA
 					2. ECC->ECC ECC->SM2 ECC->RSA 3.  SM2->ECC SM2->SM2 SM2->RSA
 		
-		2024年10月21日 23:10
+		2024年10月20日 20:10
 		1.新增功能  MAKEROOT.go 创建RSA ECC 国密 根证书 ,目前支持以下参数
 		           RSA :1024 2048 3072 4096 5120 6144 7168 8192
 		           ECC:ECDSA-224 ECDSA-256 ECDSA-384 ECDSA-521
