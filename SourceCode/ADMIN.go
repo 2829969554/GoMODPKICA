@@ -305,7 +305,9 @@ if(MODML[1]=="signCERT" || MODML[1]=="signcert" || MODML[1]=="signcrt" || MODML[
 	//fmt.Println(subname,keybit,hash)
 	if(certtype=="0"){
 		fmt.Println("")
-		fmt.Print("请输入证书用途(1:用户证书(签名、加密、解密、交换) 3.仅用于加密证书(签名、加密) 4.仅用于解密证书(签名、解密)：")
+		fmt.Println("证书用途 (ECC->ECDSA类型域名证书请填 5) \n例如 (1:全功能证书(签名、不可抵赖、加密、解密、数据加密、密钥加密、密钥交换)  2.中间CA(签名、签发证书、CRL签名) \n 3.仅用于加密(加密)  4.仅用于解密(解密)")
+		fmt.Println("(5:仅用于签名证书(签名、不可抵赖)  6.仅用于数据加密(数据加密) \n 7.仅用于密钥加密(密钥加密)  8.仅用于密钥交换证书(交换)")
+		fmt.Print("请输入证书用途(例如 1):")
 		fmt.Scanln(&keyusage) 
 		fmt.Println("")
 		fmt.Println("请输入增强密钥用法(多个用法用,间隔)")
@@ -364,7 +366,7 @@ if(MODML[1]=="signCERT" || MODML[1]=="signcert" || MODML[1]=="signcrt" || MODML[
 	 args=[]string{finalString,keybit,hash,keyusage,exusage,certtype,zxtime,ymlisttx,iplisttx,Kernel,IssureID,Keyalgorithm} 
 	 // 创建一个*Cmd对象，表示要执行的命令  
 	 cmd := exec.Command(MODTC+"\\MAKECERT.EXE", args...)  
-	  
+	 fmt.Println(MODTC+"\\MAKECERT.EXE ",args)
 	 // 运行命令并等待它完成  
 	 output, err := cmd.CombinedOutput()  
 	 if err != nil {  

@@ -1,15 +1,41 @@
 package main
 import(
 	"fmt"
-	"encoding/hex"
+	"crypto/ecdsa"
+	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
+	"encoding/hex"
 	"strconv"
+	"log"
 )
 //更新日期：2024年10月19日18时
 
 //模拟生成随机SCT的签名参数值 仅用于生成测试证书  无法通过算法验证签名
 func SCTGenerateSignature()(data []byte){
+
 	tmp := []byte{}
+	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		log.Fatal(err)
+	}
+	hash := sha256.Sum256(data)
+
+	tmp, err = ecdsa.SignASN1(rand.Reader,privateKey, hash[:])
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	fmt.Println("SCT Signature:",tmp)
+
+	if(ecdsa.VerifyASN1(&privateKey.PublicKey,hash[:],tmp)){
+		fmt.Println("SCT Verify:",true)
+	}else{
+		fmt.Println("SCT Verify:",false)
+	}
+
+	//VerifyASN1
+	/* 模拟效果
 	tmp = append(tmp,[]byte{0x46,0x30,0x44,0x02,0x20}...)
     a := make([]byte, 32)
     rand.Read(a)
@@ -19,6 +45,7 @@ func SCTGenerateSignature()(data []byte){
     b := make([]byte, 32)
     rand.Read(b)
     tmp = append(tmp,b...)
+    */
     return tmp
 }
 
@@ -138,6 +165,7 @@ func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
 	for _, sct := range thisSCT.SCTs {
 		a,b := sct.CreateSCT()
 		langer += len(b)
+		langer +=1
 		if(a == false){
 			fmt.Println("出错了 CreateSCTList函数中 sct.CreateSCT()")
 			return false,[]byte{0}
@@ -146,15 +174,27 @@ func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
 		mybyte = append(mybyte,b...)
 
 	}
+	
+	if(len(thisSCT.SCTs) <=3){
+		langer = langer - len(thisSCT.SCTs)
+	}else{
+		if(len(thisSCT.SCTs) < 6){
+			langer = langer - (len(thisSCT.SCTs)-1)
+		}else{
+			langer = langer - (len(thisSCT.SCTs)-2)
+		}
+	}
+
 	//fmt.Println("len:",langer)
 	if(langer > 255){
 		//3组SCT信息
-		mybyte2 = append(mybyte2,0x01)
+		cs := int(langer / 255)
+		mybyte2 = append(mybyte2,byte(cs))
+
 		langer += 1
 		mybyte2 = append(mybyte2,byte((langer % 255) + 1))
 	}else{
-		mybyte2 = append(mybyte2,0x00)
-		langer += 1		
+		langer += 1	
 		if(langer < 128){
 			//1组SCT信息
 			mybyte2 = append(mybyte2,byte(langer))
@@ -169,30 +209,40 @@ func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
 	mybyte2 = append(mybyte2,mybyte...)
 	langer += 1
 	mybyte3 = append(mybyte3,0x04)
-	mybyte3 = append(mybyte3,0x82)
+	
 	if(langer > 255){
 		//3组SCT信息
-		mybyte3 = append(mybyte3,0x01)
+		mybyte3 = append(mybyte3,0x82)
+
+		cs := int(langer / 255)
+
+		mybyte3 = append(mybyte3,byte(cs))
 		langer += 1
 		mybyte3 = append(mybyte3,byte((langer % 255) + 1))
 	}else{
-		mybyte3 = append(mybyte3,0x00)
 		langer += 1
+		
 		if(langer < 128){
 			//1组SCT信息
 			mybyte3 = append(mybyte3,byte(langer))
 		}else{
 			//2组SCT信息
+			mybyte3 = append(mybyte3,0x81)
 			mybyte3 = append(mybyte3,byte(langer+1))
 		}
-		
+		//langer += 1
+		mybyte3 = append(mybyte3,0x00)
 	}
 	
 	
 	
 	mybyte3 = append(mybyte3,mybyte2...)
+	thisSCT.Raw = mybyte3
+	thisSCT.SCTListlenth = len(mybyte3)
+	return true,mybyte3
 
-	//fmt.Println(hex.EncodeToString(mybyte3),len(mybyte3),langer)
+/*
+	fmt.Println("比较值：",len(mybyte3)-4 - (len(thisSCT.SCTs) - 1),langer)
 	if(len(mybyte3)-4 - (len(thisSCT.SCTs) - 1) == langer){  //这里-4是因为 0x04 0x82 0x00 0xlanger 头部预留4位置
 		thisSCT.Raw = mybyte3
 		thisSCT.SCTListlenth = len(mybyte3)
@@ -200,7 +250,10 @@ func (thisSCT *SCTList) CreateSCTList()(status bool,data []byte){
 	}
 	fmt.Println("Error in sct.go 126 Code:",len(mybyte3),langer)
 	return false,[]byte{0}
+*/
 }
+
+
 //解析SCT列表 签名证书列表
 func (thisSCTlist *SCTList) Parse (mysctlist []byte)(err bool){
 	thisSCTlist.Raw= mysctlist

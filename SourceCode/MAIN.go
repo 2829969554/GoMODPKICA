@@ -13,7 +13,7 @@ import (
 	"bufio"
 	"io/ioutil"
 	"crypto/x509"
-	//"crypto/x509/pkix"
+	"crypto/x509/pkix"
 	"encoding/pem"
 	"time"
 	"encoding/asn1"
@@ -197,12 +197,13 @@ CEstatus:=2
     	CEstatus=1
     }
 
-/*
+
 suijiNonce:=pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,5,5,7,48,1,2},
         Critical: false,
         Value:    last18Bytes,//ocspNonce,
 }
+/*
 fmt.Print(suijiNonce)
 */
 
@@ -308,6 +309,11 @@ fmt.Print(suijiNonce)
 	 
  } 
 
+
+//判断是否具有OCSP Nonice信息，如果有动态填充该信息
+if(len(ocspNonce) >5 ){
+	ocspResp.ExtraExtensions = []pkix.Extension{suijiNonce}
+}
 
 
  //给OCSP响应对象模板签名转ANS.1数据[]byte（使用证书和私钥作为签名者）

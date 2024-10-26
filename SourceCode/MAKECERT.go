@@ -4,8 +4,11 @@ package main
   /* 签发用户证书 subname 参数1(格式:key:value 分隔符:,)   
     可填null空   keybit  参数2(格式:4096 例子:1024|2048|4096|8192) 
     可填null空   hash    参数3(格式:sha1 例子:sha1|sha256|sha384|sha512|...)
-    可填null空   usage   参数4(格式:1 例子:1.用户证书 2.中间CA 3.仅用于加密证书 4.仅用于解密证书)
-                              中间CA一般为1,2,32,64 | 用户证书为1,4,8,16 |3.只能加密128|4.只能解密256
+    可填null空   usage   参数4(格式:1 例子:1.全功能证书 2.中间CA 3.签名、加密证书(签名、加密) 4.签名、解密证书(签名、解密))
+                        (5:仅用于签名证书(签名) 6.仅用于加密证书(加密) 7.仅用于解密证书(解密) 8.仅用于密钥交换证书(交换)
+          1.全功能为1,4,8,16 | 2.中间CA一般为1,2,32,64 | 3.仅用于加密证书一般为128 |4.仅用于解密证书一般为256
+          5.仅用于签名证书一般为1,2 | 6.仅用于数据加密一般为8  |7.仅用于密钥加密一般为4 | 8.仅用于密钥交换一般为16
+                            
      可填null空  exusage 参数5(格式:1,2,3 分隔符:, 例子:0,1,2,3,4,5,6,7,8,9,10,11,12,13)
      可填null空  type    参数6(格式:0 例子:0或1;0:用户证书 1:为中间CA;可空默认为0)
      可填null空  time    参数7(格式1:1 例子:以当前日期为起点计算1年,可以填30,代表30年。默认为1)
@@ -40,6 +43,7 @@ import (
  "net"   
  //"net/url" 
  "encoding/asn1"
+ "encoding/hex"
  "crypto/sha256" 
  "path/filepath"
  "strings"
@@ -870,7 +874,7 @@ MODsuanfa:=MODx509.SignatureAlgorithm
 }else{
     if(len(MODML)>=5){
         if(MODML[4]=="1"){
-            //用户证书
+            //用户证书 全功能证书
             MODx509.KeyUsage=1|2|4|8|16
         }
         if(MODML[4]=="2"){
@@ -878,13 +882,30 @@ MODsuanfa:=MODx509.SignatureAlgorithm
             MODx509.KeyUsage=1|2|32|64
         }
         if(MODML[4]=="3"){
-            //用户证书 仅用于加密 签名
-            MODx509.KeyUsage=1|2|128
+            //用户证书 仅用于加密
+            MODx509.KeyUsage=128
         }
         if(MODML[4]=="4"){
-            //用户证书 仅用于解密 签名
-            MODx509.KeyUsage=1|2|256
+            //用户证书 仅用于解密
+            MODx509.KeyUsage=256
         }
+        if(MODML[4]=="5"){
+            //用户证书 仅用于签名
+            MODx509.KeyUsage=1|2
+        }
+        if(MODML[4]=="6"){
+            //用户证书 仅用于数据加密
+            MODx509.KeyUsage=8
+        }
+        if(MODML[4]=="7"){
+            //用户证书 仅用于密钥加密
+            MODx509.KeyUsage=4
+        }
+        if(MODML[4]=="8"){
+            //用户证书 仅用于密钥交换
+            MODx509.KeyUsage=16
+        }
+
     }
 }
 
@@ -1059,34 +1080,42 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
 */
 
     //定义SCT结构体
-    var mysct,mysct2 SCT
+    var mysct,mysct2,mysct3 SCT
     //版本号
     mysct.Version = 0
     mysct2.Version = 0
+    mysct3.Version = 0
     //证书透明度日志ID
-    mysct.LogID = subid
-    mysct2.LogID = priid
+    mysct.LogID = priid
+    mysct2.LogID = subid
+    mysct3.LogID,_ = hex.DecodeString("12f14e34bd53724c840619c38f3f7a13f8e7b56287889c6d300584ebe586263a")
+
     //签署实时数据戳UTC时间，精确到毫秒
     mysct.Timestamp = uint64(time.Now().UTC().UnixMilli())
     mysct2.Timestamp = uint64(time.Now().UTC().UnixMilli())
+    mysct3.Timestamp = uint64(time.Now().UTC().UnixMilli())
     //等待签名数据的哈希算法 0:none  1:MD5  2:SHA1  3:SHA224  4:SHA256   5:SHA384  6:SHA512
     mysct.Hash = 4
     mysct2.Hash = 4
+    mysct3.Hash = 4
     //签名算法 0:anonymous  1:RSA  2:DSA  3:ECDSA
     mysct.Signtype = 3
     mysct2.Signtype = 3
+    mysct3.Signtype = 3
     //签名内容
     mysct.Signature = SCTGenerateSignature()
     mysct2.Signature = SCTGenerateSignature()
+    mysct3.Signature = SCTGenerateSignature()
     //fmt.Println("长度",len(mysct.Signature))
     //根据上述参数创建SCT结构数据
     mysct.CreateSCT()
     mysct2.CreateSCT()
-
+    mysct3.CreateSCT()
     //定义并创建SCT列表结构体数据
     var mysctlist SCTList
+    mysct3 = mysct3
     mysctlist = SCTList{
-        //将2组SCT结构套在一起
+        //将3组SCT结构套在一起
         SCTs: []SCT{mysct,mysct2},
     }
 
@@ -1103,12 +1132,12 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     /*MOD新版CPS模块待更新*/
     // 创建一个CPS扩展
     cpsURL := "https://baidu.com"
-    cpsTEXT:= `我是可信证书`
+    cpsTEXT:= `https://baidu.com`
 
     cpsExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{2,5,29,32},
         Critical: false,
-        Value:    GenerateCPSbyte([]asn1.ObjectIdentifier{{2,23,140,1,4,1},{2,23,140,1,4,2}},cpsURL,cpsTEXT),
+        Value:    GenerateCPSbyte([]asn1.ObjectIdentifier{{1,3,6,1,4,1,4146,1,20},{2,23,140,1,1}},cpsURL,cpsTEXT),
     }  
     // 创建一个OCSP不撤销检查扩展
     
@@ -1168,13 +1197,14 @@ if(MODML[1]=="initTIMSTAMP"){
         caverExtension,
         modgjExtension,
         //ctyExtension,
-        ctExtension,
+        //ctExtension,
         //noocspExtension,
         //ocspmustExtension,
         cpsExtension,
         }
 } 
 
+ctExtension = ctExtension
 fmt.Println("我的要使用的算法",template.SignatureAlgorithm)
 
  // 使用证书模板和RSA密钥对生成证书  
