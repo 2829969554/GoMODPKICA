@@ -1,6 +1,7 @@
 package main
 import(
 	"fmt"
+	"crypto/x509"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
@@ -11,22 +12,35 @@ import(
 )
 //更新日期：2024年10月19日18时
 
-//模拟生成随机SCT的签名参数值 仅用于生成测试证书  无法通过算法验证签名
-func SCTGenerateSignature()(data []byte){
+//模拟生成随机SCT的签名参数值 仅用于生成测试证书  仅用算法验证。无法通过浏览器验证SCT签名，浏览器报错 From unkone CTlogs，因为浏览器没有内置我自己生成的Ctlog公钥（无法修改浏览器）
+//待签名数据为颁发者证书公钥的SHA256值和使用者证书公钥的SHA256值
+func SCTGenerateSignature(IssuerPublicKeySH256 []byte,UserPublicKeySH256 []byte,PreSCT *SCT,SCTlogPublicKey *[]byte)(data []byte){
+	TimestampHexStr := fmt.Sprintf("%x", PreSCT.Timestamp) //将时间戳转hex文本
+	TimestampHexBytes,_ := hex.DecodeString("0"+TimestampHexStr) //这里的0为填充，时间戳Byte为7位，开通填充0补足8bitText
+
+	PreSignedData:= []byte{}
+	PreSignedData = append(PreSignedData,IssuerPublicKeySH256...)
+	PreSignedData = append(PreSignedData,UserPublicKeySH256...)
+	PreSignedData = append(PreSignedData,[]byte{0x00,0x00}...)  //间隔符
+	PreSignedData = append(PreSignedData,TimestampHexBytes...)  //时间戳
 
 	tmp := []byte{}
 	privateKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
 		log.Fatal(err)
 	}
-	hash := sha256.Sum256(data)
+
+	*SCTlogPublicKey,_ =x509.MarshalPKIXPublicKey(&privateKey.PublicKey)
+
+	hash := sha256.Sum256(PreSignedData)
 
 	tmp, err = ecdsa.SignASN1(rand.Reader,privateKey, hash[:])
 	if err != nil {
 		log.Fatal(err)
 	}
-	
-	fmt.Println("SCT Signature:",tmp)
+
+	fmt.Println("SCT ID:",fmt.Sprintf("%x",PreSCT.LogID))
+	fmt.Println("SCT Signature:",fmt.Sprintf("%x",tmp))
 
 	if(ecdsa.VerifyASN1(&privateKey.PublicKey,hash[:],tmp)){
 		fmt.Println("SCT Verify:",true)

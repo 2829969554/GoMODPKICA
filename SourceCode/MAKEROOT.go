@@ -48,6 +48,8 @@ MODML:=os.Args
 MODSUCRL:=""
 MODSUCRT:=""
 MODSUOCSP:=""
+MODSUCPS:= "https://gitee.com/wxgshuju/modpkica"
+MODSUCPS_Nonice:= "这是MODPKICA的证书颁发策略用户通告内容。/This is MODPKICA CPS Nonice Text."
  ex, err := os.Executable()  
  if err != nil {  
  panic(err)  
@@ -91,6 +93,12 @@ MODPKI_WebPublicCRTdir:=MODTC+"\\PKI\\WebPublic\\CRT\\"
         }
         if(parts[0]=="OCSP"){
             MODSUOCSP=rftrn(parts[1])
+        }
+        if(parts[0]=="CPS"){
+            MODSUCPS=rftrn(parts[1])
+        }
+        if(parts[0]=="CPS_Nonice"){
+            MODSUCPS_Nonice=rftrn(parts[1])
         }
     } 
 
@@ -363,7 +371,7 @@ MODSUCRT=strings.Replace(MODSUCRT, "{CID}", CERTID.Text(16), -1)
 MODSUCRL=strings.Replace(MODSUCRL, "{CID}", CERTID.Text(16), -1)
 MODissureocsp:=[]string{MODSUOCSP}
 MODissurecrt:=[]string{MODSUCRT}
-MODissurecrl:=[]string{MODSUCRL}
+MODissurecrl:=[]string{MODSUCRL,strings.Replace(MODSUCRL, ".crl", ".der.crl", 1)}
 //使用者可选
 MODuseyuming:=[]string{
     //"qq.com"
@@ -593,7 +601,8 @@ UnknownExtKeyUsage:MODUnknownExtKeyUsage,
     //签名算法 0:anonymous  1:RSA  2:DSA  3:ECDSA
     mysct.Signtype = 3
     //签名内容
-    mysct.Signature = SCTGenerateSignature()
+    var SctPublicKey []byte
+    mysct.Signature = SCTGenerateSignature(priid,subid,&mysct,&SctPublicKey)
     //fmt.Println("长度",len(mysct.Signature))
     //根据上述参数创建SCT结构数据
     mysct.CreateSCT()
@@ -614,34 +623,48 @@ UnknownExtKeyUsage:MODUnknownExtKeyUsage,
         Critical: false,
         Value:    sctans1data,
     }
-    
-
+    ctExtension = ctExtension
+    // 创建一个CT Log公钥扩展（此扩展存储公钥用于验证SCT列表签名，因为浏览器没有内置自己生成的公钥，所以需要嵌入到x509证书体中）
+    ctlogpublickey := pkix.Extension{
+        Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 5},
+        Critical: false,
+        Value:    SctPublicKey,//多个证书用{0x00,0x00}间隔
+    }
+    ctlogpublickey = ctlogpublickey
     /*MOD新版CPS模块待更新*/
     // 创建一个CPS扩展
-    cpsURL := "https://baidu.com"
-    cpsTEXT:= `我是可信根证书`
+    cpsURL := MODSUCPS
+    cpsTEXT:= MODSUCPS_Nonice
+
+    if(cpsURL=="null" || cpsURL=="NULL"){
+        cpsURL="https://gitee.com/wxgshuju/modpkica"
+    }
+    if(cpsTEXT=="null" || cpsTEXT=="NULL"){
+        cpsTEXT="我是受信任证书颁发机构签发的可信根证书。\nThis is a Trusted Root Certificate Authority."
+    }
 
     cpsExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{2,5,29,32},
         Critical: false,
-        Value:    GenerateCPSbyte([]asn1.ObjectIdentifier{{2,23,140,1,4,1},{2,23,140,1,4,2}},cpsURL,cpsTEXT),
+        Value:    GenerateCPSbyte([]asn1.ObjectIdentifier{{1,3,6,1,4,1,4146,1,95},{2,5,29,32,0},{1,3,6,1,4,1,311,10,12,1},{2,23,140,1,1},{2,23,140,1,3}},cpsURL,cpsTEXT),
     }
-
+    cpsExtension = cpsExtension
          
     // 创建一个OCSP不撤销检查扩展
-    /*
+    
     noocspExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,5,5,7,48,1,5},
         Critical: false,
         Value:    []byte{0x05,0x00},
     }
+    noocspExtension = noocspExtension
     // 创建一个OCSP MUST装订扩展
     ocspmustExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,5,5,7,1,24},
         Critical: false,
         Value:    []byte{0x30,0x03,0x02,0x01,0x05},
     }
-    */
+    ocspmustExtension = ocspmustExtension
     // 创建一个CA版本号扩展 最后一位版本号3.0
     caverExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,1},
@@ -653,6 +676,7 @@ UnknownExtKeyUsage:MODUnknownExtKeyUsage,
         caverExtension,
         //ctyExtension,
         ctExtension,
+        ctlogpublickey,
         //noocspExtension,
         //ocspmustExtension,
         cpsExtension,

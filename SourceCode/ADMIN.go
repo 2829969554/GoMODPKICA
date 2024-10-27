@@ -449,8 +449,13 @@ if(MODML[1]=="signCRL" || MODML[1]=="signcrl" || MODML[1]=="CRL" || MODML[1]=="c
 if(MODML[1]=="initOCSP" || MODML[1]=="initocsp"){
 	fmt.Println("初始化新OCSP响应签名证书")
 	 // 命令行参数  
-	 args:=[]string{"initOCSP",MODML[2]}  
-	  
+	 args:=[]string{}
+	 if(len(MODML) > 2){
+	 	args= []string{"initOCSP",MODML[2]}  
+	 }else{
+	 	args= []string{"initOCSP","RSA"}  //默认RSA
+	 } 
+
 	 // 创建一个*Cmd对象，表示要执行的命令  
 	 cmd := exec.Command(MODTC+"\\MAKECERT.EXE", args...) 	  
 	 // 运行命令并等待它完成  
@@ -464,7 +469,13 @@ if(MODML[1]=="initTIMSTAMP" || MODML[1]=="inittimstamp" || MODML[1]=="inittimest
 	if(len(MODML)==3){
 		 //说明没带参数
 		 // 命令行参数  
-		 args:=[]string{"initTIMSTAMP","SHA1",MODML[2]}  
+		 args:=[]string{}
+		 if(len(MODML) > 2){
+		 	args= []string{"initTIMSTAMP","SHA1",MODML[2]}
+		 }else{
+		 	args= []string{"initTIMSTAMP","SHA1","RSA"}  //默认RSA
+		 } 
+		   
 		 cmd := exec.Command(MODTC+"\\ADMIN.EXE", args...) 	  
 		 // 运行命令并等待它完成  
 		 outtext,err:=cmd.CombinedOutput()  
@@ -476,7 +487,12 @@ if(MODML[1]=="initTIMSTAMP" || MODML[1]=="inittimstamp" || MODML[1]=="inittimest
 		 	fmt.Println(string(outtext))
 		 } 
 
-		 args=[]string{"initTIMSTAMP","SHA256",MODML[2]}   
+		 
+		 if(len(MODML) > 2){
+		 	args = []string{"initTIMSTAMP","SHA256",MODML[2]}
+		 }else{
+		 	args=  []string{"initTIMSTAMP","SHA256","RSA"}  //默认RSA
+		 }  
 		 cmd = exec.Command(MODTC+"\\ADMIN.EXE", args...) 	  
 		 // 运行命令并等待它完成  
 		 outtext,err=cmd.CombinedOutput()  
@@ -506,6 +522,33 @@ if(MODML[1]=="initTIMSTAMP" || MODML[1]=="inittimstamp" || MODML[1]=="inittimest
 		 }
 
 	 }
+	 if(len(MODML)==2){
+		 args:=[]string{"initTIMSTAMP","SHA1","RSA"}  
+		 cmd := exec.Command(MODTC+"\\MAKECERT.EXE", args...) 
+
+		 // 运行命令并等待它完成  
+		 outtext,err:=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 }
+
+		 args=[]string{"initTIMSTAMP","SHA256","RSA"}  
+		 cmd = exec.Command(MODTC+"\\MAKECERT.EXE", args...) 
+
+		 // 运行命令并等待它完成  
+		 outtext,err=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 } 
+	 }
 	os.Exit(0)
 }
 
@@ -522,7 +565,7 @@ if(MODML[1]=="verifyCERT"){
 }
 
 if(MODML[1]=="VERSION" || MODML[1]=="version"  || MODML[1]=="ver"  || MODML[1]=="VER"){
-	fmt.Println("MOD PKI CA 4.0 \r\n Version:202410212240")
+	fmt.Println("MOD PKI CA 4.0 \r\n Version:202410271455")
 	os.Exit(0)
 }
 

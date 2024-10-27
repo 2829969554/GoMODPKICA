@@ -8,6 +8,12 @@ CRT=http://anqikeji.picp.net/CRT/{CID}.crt
 #OCSP为数字证书 授权信息页面 联机证书状态协议(1.3.6.1.5.5.7.48.1)的链接
 OCSP=http://anqikeji.picp.net/OCSP
 
+#CPS为数字证书 证书策略 CPS(1.3.6.1.5.5.7.2.1)中的策略限定符指向的链接
+CPS=http://anqikeji.picp.net/CPS 
+
+#CPS为数字证书 证书策略 用户通告(1,3,6,1,5,5,7,2,2)中的用户通告文本内容
+CPS_Nonice=我是可信证书。
+
 #WEBPORT为网页服务端启动端口,修改端口(80和443端口除外)需要修改上方链接
 WEBPORT=80
 

@@ -80,6 +80,8 @@ fmt.Println("执行参数",MODML)
 MODSUCRL:=""
 MODSUCRT:=""
 MODSUOCSP:=""
+MODSUCPS:= "https://gitee.com/wxgshuju/modpkica"
+MODSUCPS_Nonice:= "这是MODPKICA的证书颁发策略用户通告内容。/This is MODPKICA CPS Nonice Text."
  ex, err := os.Executable()  
  if err != nil {  
  panic(err)  
@@ -123,7 +125,7 @@ TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
             break 
         } 
         if(line[0]=='#'){
-            continue
+            continue    //每行首字母为#说明这一行是注释，跳过这一行
         }
         parts := strings.Split(line, "=")
         if(parts[0]=="CRL"){
@@ -134,6 +136,12 @@ TSACERTsha256key:=MODTIMSTAMPdir+"sha256.key"
         }
         if(parts[0]=="OCSP"){
             MODSUOCSP=rftrn(parts[1])
+        }
+        if(parts[0]=="CPS"){
+            MODSUCPS=rftrn(parts[1])
+        }
+        if(parts[0]=="CPS_Nonice"){
+            MODSUCPS_Nonice=rftrn(parts[1])
         }
     } 
 
@@ -779,7 +787,7 @@ MODSUCRT=strings.Replace(MODSUCRT, "{CID}", rootcert.SerialNumber.Text(16), -1)
 MODSUCRL=strings.Replace(MODSUCRL, "{CID}", rootcert.SerialNumber.Text(16), -1)
 MODissureocsp:=[]string{MODSUOCSP}
 MODissurecrt:=[]string{MODSUCRT}
-MODissurecrl:=[]string{MODSUCRL}
+MODissurecrl:=[]string{MODSUCRL,strings.Replace(MODSUCRL, ".crl", ".der.crl", 1)}
 //使用者可选
 MODuseyuming:=[]string{
     //"qq.com"
@@ -1103,9 +1111,15 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     mysct2.Signtype = 3
     mysct3.Signtype = 3
     //签名内容
-    mysct.Signature = SCTGenerateSignature()
-    mysct2.Signature = SCTGenerateSignature()
-    mysct3.Signature = SCTGenerateSignature()
+    var SctPublicKey,SctPublicKey1,SctPublicKey2,SctPublicKey3 []byte
+    mysct.Signature = SCTGenerateSignature(priid,subid,&mysct,&SctPublicKey1)
+    mysct2.Signature = SCTGenerateSignature(priid,subid,&mysct2,&SctPublicKey2)
+    mysct3.Signature = SCTGenerateSignature(priid,subid,&mysct3,&SctPublicKey3)
+    SctPublicKey = append(SctPublicKey,SctPublicKey1...)
+    SctPublicKey = append(SctPublicKey,[]byte{0x00,0x00}...)
+    SctPublicKey = append(SctPublicKey,SctPublicKey2...)
+    SctPublicKey = append(SctPublicKey,[]byte{0x00,0x00}...)
+    SctPublicKey = append(SctPublicKey,SctPublicKey3...)
     //fmt.Println("长度",len(mysct.Signature))
     //根据上述参数创建SCT结构数据
     mysct.CreateSCT()
@@ -1116,12 +1130,19 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     mysct3 = mysct3
     mysctlist = SCTList{
         //将3组SCT结构套在一起
-        SCTs: []SCT{mysct,mysct2},
+        SCTs: []SCT{mysct,mysct2,mysct3},
     }
 
     //生成SCT列表 ASN.1数据  status是状态True|False   sctans1data为 SCT列表的ASN.1数据
     _,sctans1data:= mysctlist.CreateSCTList()
 
+    // 创建一个CT Log公钥扩展（此扩展存储公钥用于验证SCT列表签名，因为浏览器没有内置自己生成的公钥，所以需要嵌入到x509证书体中）
+    ctlogpublickey := pkix.Extension{
+        Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 5},
+        Critical: false,
+        Value:    SctPublicKey,//多个证书用{0x00,0x00}间隔
+    }
+    ctlogpublickey = ctlogpublickey
     // 创建一个CT扩展 证书透明度
     ctExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{1, 3, 6, 1, 4, 1, 11129, 2, 4, 2},
@@ -1131,13 +1152,30 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     
     /*MOD新版CPS模块待更新*/
     // 创建一个CPS扩展
-    cpsURL := "https://baidu.com"
-    cpsTEXT:= `https://baidu.com`
+    cpsURL := MODSUCPS
+    cpsTEXT:= MODSUCPS_Nonice
+
+    if(cpsURL=="null" || cpsURL=="NULL"){
+        cpsURL="https://gitee.com/wxgshuju/modpkica"
+    }
+    if(cpsTEXT=="null" || cpsTEXT=="NULL"){
+        cpsTEXT=""
+    }
+
+    CaCPSoidlist:= []asn1.ObjectIdentifier{{1,3,6,1,4,1,4146,1,95},{2,5,29,32,0},{1,3,6,1,4,1,311,10,12,1},{2,23,140,1,1},{2,23,140,1,3}}
+    EndtryCPSoidlist:= []asn1.ObjectIdentifier{{1,3,6,1,4,1,4146,1,95},{2,23,140,1,1},{2,23,140,1,3}}
+    var OIDListUseNow []asn1.ObjectIdentifier
+    
+    if(CertIsCA){
+        OIDListUseNow = CaCPSoidlist
+    }else{
+        OIDListUseNow = EndtryCPSoidlist
+    }
 
     cpsExtension := pkix.Extension{
         Id:       asn1.ObjectIdentifier{2,5,29,32},
         Critical: false,
-        Value:    GenerateCPSbyte([]asn1.ObjectIdentifier{{1,3,6,1,4,1,4146,1,20},{2,23,140,1,1}},cpsURL,cpsTEXT),
+        Value:    GenerateCPSbyte(OIDListUseNow,cpsURL,cpsTEXT),
     }  
     // 创建一个OCSP不撤销检查扩展
     
@@ -1189,7 +1227,7 @@ if(MODML[1]=="initOCSP" || MODML[1]=="initTIMSTAMP"){
     if(CertIsCA==false && len(MODML) >= 6){
         if strings.Contains(MODML[5], "1") || strings.Contains(MODML[5], "2"){
             template.ExtraExtensions=append(template.ExtraExtensions,ctExtension)
-            //template.ExtraExtensions=append(template.ExtraExtensions,ocspmustExtension)
+            template.ExtraExtensions=append(template.ExtraExtensions,ctlogpublickey)
         }
     }
 if(MODML[1]=="initTIMSTAMP"){

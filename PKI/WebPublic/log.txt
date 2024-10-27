@@ -1,0 +1,5 @@
+https://www.gstatic.com/ct/log_list/v3/log_list.json
+ct-submit.exe oak.ct.letsencrypt.org/2025h2 < my.crt >time.sct
+
+http://anqikeji.picp.net/log_list.json
+oak.ct.letsencrypt.org/2025h2/ct/v1/get-sth
