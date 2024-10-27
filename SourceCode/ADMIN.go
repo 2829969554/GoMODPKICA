@@ -555,11 +555,28 @@ if(MODML[1]=="initTIMSTAMP" || MODML[1]=="inittimstamp" || MODML[1]=="inittimest
 
 
 
-if(MODML[1]=="verifyCERT"){
+if(MODML[1]=="verifyCERT"  || MODML[1]=="verify" || MODML[1]=="verifycert"){
+	/*
 	fmt.Println("验证证书链")
-	fmt.Println("这里还没有写 1.文件完整性检查（防止修改） 2.签名检查（防止伪造，中间人攻击） 2.在本地库中验证是否可信")
+	fmt.Println("1.文件完整性检查（防止修改） 2.签名检查（防止伪造，中间人攻击） 2.在本地库中验证是否可信")
 	fmt.Println("签名验证结果:真   是否受信认:真")
 	fmt.Println("验证状态:通过 （以上两种为真则验证通过，否则验证失败）")
+	*/
+		 args :=[]string{}
+		 if(len(MODML) >=3 ){
+		 	args = append(args,MODML[2])
+		 } 
+		 cmd := exec.Command(MODTC+"\\CERTVERIFY.EXE", args...) 
+
+		 // 运行命令并等待它完成  
+		 outtext,err:=cmd.CombinedOutput()  
+		 if err != nil {
+		 	fmt.Println(err)
+		 	return 
+		 }
+		 if(string(outtext)!=""){
+		 	fmt.Println(string(outtext))
+		 }
 
 	os.Exit(0)
 }

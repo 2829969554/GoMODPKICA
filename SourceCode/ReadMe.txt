@@ -14,9 +14,10 @@
 源码文件     MAIN.go        该文件是go语言源码编译出 MAIN.exe 
 源码文件     MAKECERT.go    该文件是go语言源码编译出 MAKECERT.exe 
 源码文件     MAKEROOT.go    该文件是go语言源码编译出 MAKEROOT.exe 
+源码文件     CERTVERIFY.go  该文件是go语言源码编译出 CERTVERIFY.exe
 
 源码文件     rootGETcrl.go  该文件是go语言源码编译出 rootGETcrl.exe 
-				以上5个源码编译成功后的可执行文件放置在 MODPKICA根目录
+				以上6个源码编译成功后的可执行文件放置在 MODPKICA根目录
 
 源码文件     auto.go  	   该文件是go语言源码编译出 auto.exe 
 			此文件编译成功后的可执行文件放置在 MODPKICA根目录 下的PKI文件夹中
