@@ -20,6 +20,7 @@ go build -o ../MAKEROOT.exe MAKEROOT.go sct.go cps.go
 go build -o ../MAKECERT.exe MAKECERT.go sct.go cps.go
 go build -o ../rootGETcrl.exe rootGETcrl.go
 go build -o ../PKI/auto.exe auto.go
+go build -o ../CERTVERIFY.exe CERTVERIFY.go
 echo 编译结束
 echo 如果没有报错就代表编译成功了
 ::按回车键关闭窗口

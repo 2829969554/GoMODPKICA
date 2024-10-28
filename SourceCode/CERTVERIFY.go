@@ -3,8 +3,10 @@ package main
 import (
     "fmt"
     "crypto"
+    "crypto/md5"
     "crypto/sha1"
     "crypto/sha256"
+    "crypto/sha512"
     "tjfoc/gmsm/x509"
     "io/ioutil"
     //"crypto/rand"
@@ -20,9 +22,214 @@ import (
     "bufio"
     "time"
     "math/big"
+    "crypto/x509/pkix"
+    "tjfoc/gmsm/sm2"
+    "tjfoc/gmsm/sm3"
+    "strings"
     //"crypto/x509/pkix"
 )
 
+
+func showIssuerOrSubject(RawIssuer []byte){  // DER encoded Issuer
+
+    issuerRDNSequence := pkix.RDNSequence{}
+    _, err := asn1.Unmarshal(RawIssuer, &issuerRDNSequence)
+    if(err != nil){
+        fmt.Println("Error:showIssuer解析出错:",err)
+        return
+    }
+
+    var IssuerName pkix.Name
+    IssuerName.FillFromRDNSequence(&issuerRDNSequence)
+var attributeTypeNames = map[string]string{
+    "2.5.4.6":  "C",
+    "2.5.4.10": "O",
+    "2.5.4.11": "OU",
+    "2.5.4.3":  "CN",
+    "2.5.4.5":  "SERIALNUMBER",
+    "2.5.4.7":  "L",
+    "2.5.4.8":  "ST",
+    "2.5.4.9":  "STREET",
+    "2.5.4.17": "POSTALCODE",
+    "2.5.4.15":"EVTYPE",
+    "1.3.6.1.4.1.311.60.2.1.2":"EVCITY",
+    "1.3.6.1.4.1.311.60.2.1.3":"EVCT",
+    "1.2.840.113549.1.9.1":"EMAIL",
+}
+    for _, name := range IssuerName.Names {
+       switch attributeTypeNames[fmt.Sprintf("%s",name.Type)]{
+        case "C":
+            //IssuerName.Country[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.Country)>0){
+                continue
+            }
+            IssuerName.Country = append(IssuerName.Country,fmt.Sprintf("%s",name.Value))
+        case "O":
+            //IssuerName.Organization[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.Organization)>0){
+                continue
+            }
+            IssuerName.Organization = append(IssuerName.Organization,fmt.Sprintf("%s",name.Value))
+        case "OU":
+            //IssuerName.OrganizationalUnit[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.OrganizationalUnit)>0){
+                continue
+            }
+            IssuerName.OrganizationalUnit = append(IssuerName.OrganizationalUnit,fmt.Sprintf("%s",name.Value))
+        case "CN":
+            IssuerName.CommonName= fmt.Sprintf("%s",name.Value)
+        case "SERIALNUMBER":
+            IssuerName.SerialNumber= fmt.Sprintf("%s",name.Value)
+        case "L":
+            //IssuerName.Locality[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.Locality)>0){
+                continue
+            }
+            IssuerName.Locality = append(IssuerName.Locality,fmt.Sprintf("%s",name.Value))
+
+        case "ST":
+            //IssuerName.StreetAddress[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.StreetAddress)>0){
+                continue
+            }
+            IssuerName.StreetAddress = append(IssuerName.StreetAddress,fmt.Sprintf("%s",name.Value))
+        case "STREET":
+            //IssuerName.StreetAddress[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.StreetAddress)>0){
+                continue
+            }
+            IssuerName.StreetAddress = append(IssuerName.StreetAddress,fmt.Sprintf("%s",name.Value))
+        case "POSTALCODE":
+            //IssuerName.PostalCode[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.PostalCode)>0){
+                continue
+            }
+            IssuerName.PostalCode = append(IssuerName.PostalCode,fmt.Sprintf("%s",name.Value))
+        case "EVCITY":
+            //IssuerName.EVCITY[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.EVCITY)>0){
+                continue
+            }
+            IssuerName.EVCITY = append(IssuerName.EVCITY,fmt.Sprintf("%s",name.Value))
+        case "EVTYPE":
+            //IssuerName.EVTYPE[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.EVTYPE)>0){
+                continue
+            }
+            IssuerName.EVTYPE = append(IssuerName.EVTYPE,fmt.Sprintf("%s",name.Value))
+        case "EVCT":
+            //IssuerName.EVCT[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.EVCT)>0){
+                continue
+            }
+            IssuerName.EVCT = append(IssuerName.EVCT,fmt.Sprintf("%s",name.Value))
+        case "EMAIL":
+            //IssuerName.EMAIL[0]= fmt.Sprintf("%s",name.Value)
+            if(len(IssuerName.EMAIL)>0){
+                continue
+            }
+            IssuerName.EMAIL = append(IssuerName.EMAIL,fmt.Sprintf("%s",name.Value))
+       default:
+
+       }
+    }   
+        fmt.Println("        CN = ",IssuerName.CommonName)
+
+    
+    for _, name := range IssuerName.Country {
+        fmt.Println("        C  = ",name)
+    }
+    for _, name := range IssuerName.Organization {
+        fmt.Println("        O  = ",name)
+    }
+    for _, name := range IssuerName.OrganizationalUnit {
+        fmt.Println("        OU = ",name)
+    }
+    for _, name := range IssuerName.Province {
+        fmt.Println("        P  = ",name)
+    }
+    for _, name := range IssuerName.Locality {
+        fmt.Println("        L  = ",name)
+    }
+    for _, name := range IssuerName.StreetAddress {
+        fmt.Println("        Street = ",name)
+    }
+    for _, name := range IssuerName.EMAIL {
+        fmt.Println("        Email  = ",name)
+    }
+
+    if(IssuerName.SerialNumber != ""){
+        fmt.Println("        注册编号  = ",IssuerName.SerialNumber)
+    }
+    
+    for _, name := range IssuerName.EVCT {
+        fmt.Println("        注册国家  = ",name)
+    }
+    for _, name := range IssuerName.EVCITY {
+        fmt.Println("        注册城市  = ",name)
+    }
+    for _, name := range IssuerName.EVTYPE {
+        fmt.Println("     注册业务类别 = ",name)
+    }
+ 
+    //未知的OID和值
+    for _, name := range IssuerName.ExtraNames {
+        fmt.Println("        ",name.Type," = ",name.Value)
+    }
+    /*
+    //未知的OID和值
+    for _, name := range IssuerName.Names {
+       // fmt.Println(attributeTypeNames[fmt.Sprintf("%s",name.Type)])
+        fmt.Println("        ",name.Type," = ",name.Value)
+    }
+    */
+    fmt.Println("")
+}
+
+//根据签名算法获取哈希算法名称 和 签名算法名称
+func GetHashType(SignatureAlgorithm x509.SignatureAlgorithm)(hash string,key string){
+    switch SignatureAlgorithm{
+    case x509.MD2WithRSA :
+        return "MD2","RSA"
+    case x509.MD5WithRSA :
+        return "MD5","RSA"
+    case x509.SHA1WithRSA :
+        return "SHA1","RSA"
+    case x509.SHA256WithRSA :
+        return "SHA256","RSA"
+    case x509.SHA384WithRSA :
+        return "SHA384","RSA"
+    case x509.SHA512WithRSA :
+        return "SHA512","RSA"
+    case x509.DSAWithSHA1 :
+        return "SHA1","DSA"
+    case x509.DSAWithSHA256 :
+        return "SHA256","DSA"
+    case x509.ECDSAWithSHA1 :
+        return "SHA1","ECC"
+    case x509.ECDSAWithSHA256 :
+        return "SHA256","ECC"
+    case x509.ECDSAWithSHA384 :
+        return "SHA384","ECC"
+    case x509.ECDSAWithSHA512 :
+        return "SHA512","ECC"
+    case x509.SHA256WithRSAPSS :
+        return "SHA256","RSAPSS"
+    case x509.SHA384WithRSAPSS :
+        return "SHA384","RSAPSS"
+    case x509.SHA512WithRSAPSS :
+        return "SHA512","RSAPSS"
+    case x509.SM2WithSM3 :
+        return "SM3","SM2"
+    case x509.SM2WithSHA1 :
+        return "SHA1","SM2"
+    case x509.SM2WithSHA256 :
+        return "SHA256","SM2"
+    default:
+        return "",""
+    }
+    return "",""
+}
 func main(){
     if(len(os.Args) <2){
         fmt.Println(" 验证证书签名、证书状态、证书有效性\n","例如 Verify.exe cert.crt")
@@ -50,42 +257,49 @@ func main(){
         fmt.Println("解析用户公钥失败：",err4)
     }
 
-    fmt.Println("版本：",dmcert.Version)
+    fmt.Println("        版本：",dmcert.Version)
 
     text := fmt.Sprintf("%x", dmcert.SerialNumber)
     if len(text)%2 != 0 {
         text = "0" + text
     }
-    fmt.Println("序列号：", text)
-    fmt.Println("签名算法：",dmcert.SignatureAlgorithm)
-    fmt.Println("签名哈希算法：","SHA256")
-    fmt.Println("颁发者：","...")
+    HashType,SignType := GetHashType(dmcert.SignatureAlgorithm)
+    SignType = SignType
+    fmt.Println("      序列号：", text)
+    fmt.Println("    签名算法：",dmcert.SignatureAlgorithm)
+    fmt.Println("签名哈希算法：",HashType,"\n")
+    fmt.Println("颁发者：","")
+    showIssuerOrSubject(dmcert.RawIssuer)
+
     fmt.Println("有效期从：",dmcert.NotBefore)
-    fmt.Println("有效期到：",dmcert.NotAfter)
-    fmt.Println("使用者：","...")
+    fmt.Println("有效期到：",dmcert.NotAfter,"\n")
+
+    fmt.Println("使用者：","")
+    showIssuerOrSubject(dmcert.RawSubject)
 
     switch dmcert.PublicKeyAlgorithm {
     case 1:
-         fmt.Println("公钥：","RSA",dmcertPublicKey.(*rsa.PublicKey).Size()*8)
-    case 2:
+            fmt.Println("    公钥：","RSA",dmcertPublicKey.(*rsa.PublicKey).Size()*8)
+    case 3:
         // 获取椭圆曲线
         curve := dmcertPublicKey.(*ecdsa.PublicKey).Curve
         // 根据椭圆曲线确定密钥位数
         switch curve {
         case elliptic.P256():
-            fmt.Println("公钥：","ECC","密钥位数：256")
+            fmt.Println("    公钥：","ECC 256")
         case elliptic.P384():
-            fmt.Println("公钥：","ECC","密钥位数：384")
+            fmt.Println("    公钥：","ECC 384")
         case elliptic.P521():
-            fmt.Println("公钥：","ECC","密钥位数：521")
+            fmt.Println("    公钥：","ECC 521")
         default:
-            fmt.Println("公钥：","ECC","未知的椭圆曲线")
+            fmt.Println("    公钥：","SM2 256")
         }
+
     default:
-        fmt.Println("公钥：","未知",dmcert.PublicKeyAlgorithm)
+            fmt.Println("    公钥：","未知",dmcert.PublicKeyAlgorithm)
     }
 
-    fmt.Println("公钥参数：","05 00")
+        fmt.Println("公钥参数：","05 00")
     fmt.Println("公钥数据：\n          ",fmt.Sprintf("%x",dmcert.RawSubjectPublicKeyInfo),"\n")
 
     fmt.Println("授权密钥标识符  ：",fmt.Sprintf("%x",dmcert.AuthorityKeyId))
@@ -288,7 +502,7 @@ func main(){
 
 
     fmt.Println("\n\n")
-    fmt.Println("证书签名：\n             ",hex.EncodeToString(dmcert.Signature),"\n")
+    fmt.Println("证书签名：\n        ",hex.EncodeToString(dmcert.Signature),"\n")
 
     if(fmt.Sprintf("%x",dmcert.RawSubject) == fmt.Sprintf("%x",dmcert.RawIssuer)){
         fmt.Println("证书类别： 根证书\n")
@@ -307,7 +521,7 @@ func main(){
            if(CheckCRL(dmcert.SerialNumber,dmcert.CRLDistributionPoints)){
         fmt.Printf("吊销状态异常，此证书已经被颁发机构吊销。\n")
     }else{
-        fmt.Printf("证书正常 \n")
+        fmt.Printf("证书正常\n")
     }
     }
 
@@ -399,14 +613,12 @@ func CheckCRL(certid *big.Int,CRL_URL []string)(CertIsok bool){
 func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     if(len(CRTurl) == 0  || CRTurl== nil){
         fmt.Println("验证签名： 无法验证签名 |错误原因：证书扩展中没有URL地址，无法找到上级证书链~ ","\n")
-        return
     }
     // 发起 HTTP GET 请求
     resp, err := http.Get(CRTurl[0])
     if err != nil {
         // 如果请求失败，打印错误信息
         fmt.Println("验证签名： 失败 |错误原因：Error fetching the URL: ", err,"\n")
-        return
     }
     defer resp.Body.Close()
 
@@ -415,7 +627,6 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     if err != nil {
         // 如果读取失败，打印错误信息
         fmt.Println("验证签名： 失败 |错误原因：Error reading the response: ", err,"\n")
-        return
     }
 
     caBytespem := contents
@@ -433,24 +644,23 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     }
 
     if(fmt.Sprintf("%x",dmcacert.RawSubject) != fmt.Sprintf("%x",dmcacert.RawIssuer)){
+        fmt.Println("       CA   -->",fmt.Sprintf("%x",dmcacert.SubjectKeyId))
         if(len(dmcacert.IssuingCertificateURL) != 0){
-            fmt.Println("CA",fmt.Sprintf("%x",dmcacert.SubjectKeyId))
             GetSubPublicKey(dmcacert.IssuingCertificateURL)
         }else{
-            fmt.Println("验证签名： 无法验证签名 |错误原因：证书扩展中没有URL地址，无法找到上级证书链~ \n")
-            return false
+            fmt.Println(" 无法链接到可信根证书 | 错误原因：证书扩展中没有颁发者URL地址，无法找到CA的上级证书链。\n")
+            fmt.Println("信任状态： 不可信 (由于无法找到上级证书链 或 Root 根证书不在“受信任的根证书颁发机构”存储区中，所以它不受信任。)\n") 
         }
         
     }else{
-        fmt.Println("Root",fmt.Sprintf("%x",dmcacert.SubjectKeyId))
+        fmt.Println("       Root -->",fmt.Sprintf("%x",dmcacert.SubjectKeyId))
         if(fmt.Sprintf("%x",dmcacert.SubjectKeyId) == "66baba33e30f6ce13cee79f9b203191176136666ef4299d42ed1778d9050e890"){
-           fmt.Println("信任状态： 可信 (此Root根证书包含在可信证书库)\n")  
+           fmt.Println("信任状态： 可信 (此证书成功链接到信任锚[Root根证书])\n")  
         }else{
-           fmt.Println("信任状态： 不可信 (由于CA 根证书不在“受信任的根证书颁发机构”存储区中，所以它不受信任。)\n") 
+           fmt.Println("信任状态： 不可信 (由于 Root 根证书不在“受信任的根证书颁发机构”存储区中，所以它不受信任。)\n") 
         }
 
     }
-
     dmcaPublicKey,err3 := x509.ParsePKIXPublicKey(dmcacert.RawSubjectPublicKeyInfo)
     if err3 != nil {
         fmt.Println("解析CA公钥失败：",err3)
@@ -463,6 +673,8 @@ func CheckSign(pubkey interface{},PreSignData []byte,SignatureAlgorithm x509.Sig
     if(pubkey == nil){
         return false
     }
+    HashTypeName,SignTypeName := GetHashType(SignatureAlgorithm)
+    //fmt.Println(HashTypeName,SignTypeName)
 /*
     MD2WithRSA
     MD5WithRSA
@@ -487,27 +699,86 @@ func CheckSign(pubkey interface{},PreSignData []byte,SignatureAlgorithm x509.Sig
 
     var result []byte
     var hash crypto.Hash
-    switch SignatureAlgorithm {
-    case x509.SHA256WithRSA:
+    switch HashTypeName {
+
+    case "SHA512":
+        hash = crypto.SHA512
+        Hashsha512 := sha512.New()
+        Hashsha512.Write(PreSignData)
+        result = Hashsha512.Sum(nil)
+
+    case "SHA384":
+        hash = crypto.SHA384
+        Hashsha384 := sha512.New384()
+        Hashsha384.Write(PreSignData)
+        result = Hashsha384.Sum(nil)
+
+    case "SHA256":
         hash = crypto.SHA256
         Hashsha256 := sha256.New()
         Hashsha256.Write(PreSignData)
         result = Hashsha256.Sum(nil)
-    case x509.SHA1WithRSA:
+
+    case "SHA1":
         hash = crypto.SHA1
         Hashsha1 := sha1.New()
         Hashsha1.Write(PreSignData)
         result = Hashsha1.Sum(nil)
+    case "MD5":
+        hash = crypto.MD5
+        Hashmd5 := md5.New()
+        Hashmd5.Write(PreSignData)
+        result = Hashmd5.Sum(nil)
+    case "SM3":
+        Hashsm3 := sm3.New()
+        Hashsm3.Write(PreSignData)
+        result = Hashsm3.Sum(nil)
+        result = PreSignData
     default:
         fmt.Println("验证签名： 失败 |错误原因：未知签名算法\n",SignatureAlgorithm,"\n")
         return false
     }
-    certIsok:=rsa.VerifyPKCS1v15(pubkey.(*rsa.PublicKey),hash,result,Signature)
-    if(certIsok==nil){
-        fmt.Println("验证签名： 通过 | 正常\n")
-        return true
-    }else{
-        fmt.Println("验证签名： 签名无效\n",certIsok)
+
+    if(SignTypeName == "RSA"){
+        certIsok:=rsa.VerifyPKCS1v15(pubkey.(*rsa.PublicKey),hash,result,Signature)
+        if(certIsok == nil){
+            fmt.Println("验证签名： 通过、签名有效\n")
+            return true
+        }else{
+            fmt.Println("验证签名： 签名无效\n",certIsok)
+        }
+    }
+
+    if(SignTypeName == "ECC"){
+        certIsok := ecdsa.VerifyASN1(pubkey.(*ecdsa.PublicKey), result, Signature)
+        if(certIsok){
+            fmt.Println("验证签名： 通过、签名有效\n")
+            return true
+        }else{
+            fmt.Println("验证签名： 签名无效","，可能文件已经被修改。\n")
+        }
+    }
+    if(SignTypeName == "SM2"){
+
+        var sm2pubkey *sm2.PublicKey
+        sm2pubByte,_ := x509.MarshalPKIXPublicKey(pubkey.(*ecdsa.PublicKey))
+        //拼装SM2公钥HEX
+        splitStr := strings.Split(fmt.Sprintf("%x",sm2pubByte), "04")
+        if(len(splitStr)==2){
+            sm2pub,err := x509.ReadPublicKeyFromHex("04" + splitStr[1])
+            if(err != nil){
+                fmt.Println(err)
+            }
+            sm2pubkey = sm2pub
+        }
+        certIsok := sm2pubkey.Verify(result, Signature)
+        if(certIsok){
+            fmt.Println("验证签名： 通过、签名有效\n")
+            return true
+        }else{
+            fmt.Println("验证签名： 签名无效","，可能文件已经被修改。\n")
+        }
+        
     }
     return false
 }
