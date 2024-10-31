@@ -937,6 +937,10 @@ MODsuanfa:=MODx509.SignatureAlgorithm
  //12   ExtKeyUsageMicrosoftCommercialCodeSigning
  //13   ExtKeyUsageMicrosoftKernelCodeSigning
  MODx509.ExtKeyUsage=[]sm2x509.ExtKeyUsage{}
+
+ //MOD添加其他未知的增强型密钥用法OID 补充
+ MODUnknownExtKeyUsage := []asn1.ObjectIdentifier{
+ } 
  nums := make([]int, 0) 
  //获取增强型密钥用法多个
  if(len(MODML)>=6){
@@ -946,7 +950,88 @@ MODsuanfa:=MODx509.SignatureAlgorithm
             oidlistrow:=strings.Split(exoid, ",")
             for _, danduoid := range oidlistrow {
                 num, _ := strconv.Atoi(danduoid)
-                nums = append(nums, num)
+                //x509.go文件内置序号为0-11的增强密钥用法oid，
+                //序号从第12开始需要自行append对应oid到MODUnknownExtKeyUsage变量中
+                if(num <12 ){
+                    nums = append(nums, num)
+                }else{
+                    switch num{
+                    case 12:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,2,1,22})
+                    case 13:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,61,1,1})
+                    case 14:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,5})
+                    case 15:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,6})
+                    case 16:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,7})
+                    case 17:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,8})
+                    case 18:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,64,1,1})
+                    case 19:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,47,1,1})
+                    case 20:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,19})
+                    case 21:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,5,2,3,5})
+                    case 22:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,13})
+                    case 23:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,5})
+                    case 24:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,10})
+                    case 25:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,11})
+                    case 26:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,12})
+                    case 27:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,2})
+                    case 28:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,4})
+                    case 29:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,6})
+                    case 30:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,19})
+                    case 31:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,5,5,8,2,2})
+                    case 32:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,4,1})
+                    case 33:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,9})
+                    case 34:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,5,1})
+                    case 35:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,1})
+                    case 36:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,6,1})
+                    case 37:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,6,2})
+                    case 38:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,2,1})
+                    case 39:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,2,2})
+                    case 40:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,30})
+                    case 41:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,31})
+                    case 42:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,32})
+                    case 43:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1})
+                    case 44:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1,1})
+                    case 45:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1,4})
+                    case 46:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,2})
+                    default:
+                        
+                    }
+
+                }
+                
             }
         }else{
              num, err := strconv.Atoi(exoid)  
@@ -954,7 +1039,85 @@ MODsuanfa:=MODx509.SignatureAlgorithm
                  num=0
              }  
              
-             nums = append(nums, num) 
+                if(num <12 ){
+                    nums = append(nums, num)
+                }else{
+                    switch num{
+                    case 12:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,2,1,22})
+                    case 13:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,61,1,1})
+                    case 14:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,5})
+                    case 15:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,6})
+                    case 16:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,7})
+                    case 17:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,8})
+                    case 18:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,64,1,1})
+                    case 19:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,47,1,1})
+                    case 20:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,19})
+                    case 21:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,5,2,3,5})
+                    case 22:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,13})
+                    case 23:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,5})
+                    case 24:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,10})
+                    case 25:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,11})
+                    case 26:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,12})
+                    case 27:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,2})
+                    case 28:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,4})
+                    case 29:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,6})
+                    case 30:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,19})
+                    case 31:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,5,5,8,2,2})
+                    case 32:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,4,1})
+                    case 33:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,9})
+                    case 34:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,5,1})
+                    case 35:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,1})
+                    case 36:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,6,1})
+                    case 37:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,6,2})
+                    case 38:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,2,1})
+                    case 39:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,20,2,2})
+                    case 40:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,30})
+                    case 41:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,31})
+                    case 42:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,3,6,1,4,1,311,21,32})
+                    case 43:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1})
+                    case 44:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1,1})
+                    case 45:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,1,4})
+                    case 46:
+                        MODUnknownExtKeyUsage = append(MODUnknownExtKeyUsage,asn1.ObjectIdentifier{1,2,840,113635,100,4,2})
+                    default:
+                        
+                    }
+
+                }
         }
     }
 
@@ -989,9 +1152,8 @@ if(CertIsCA==true){
  }  
 }
 
- //MOD添加其他增强型密钥用法 补充
- MODUnknownExtKeyUsage := []asn1.ObjectIdentifier{
- } 
+
+/*如果密钥用途包含代码签名 且为最终用户证书就自动携带下列密钥功法
 if(len(MODML)>=11){
     if(MODML[10]=="1"){
  MODUnknownExtKeyUsage = []asn1.ObjectIdentifier{
@@ -1004,6 +1166,7 @@ if(len(MODML)>=11){
  }  
     }
 }
+*/
  //******************************
  // 定义时间格式  不用动我
  modlayout := "2006/01/02-15:04:05"  

@@ -7,8 +7,11 @@ import (
     "crypto/sha1"
     "crypto/sha256"
     "crypto/sha512"
+    "crypto/ocsp"
+gox509 "crypto/x509"
     "tjfoc/gmsm/x509"
     "io/ioutil"
+    "bytes"
     //"crypto/rand"
     "encoding/hex"
     "encoding/pem"
@@ -340,6 +343,8 @@ func main(){
     //UnknownExtKeyUsage
     for _, ExtKeyUsage := range dmcert.UnknownExtKeyUsage{
         switch fmt.Sprintf("%x",ExtKeyUsage) {
+        case fmt.Sprintf("%x",asn1.ObjectIdentifier{1,3,6,1,4,1,311,2,1,22}):
+            fmt.Println("              Windows 商业代码签名 (",ExtKeyUsage,")")
         case fmt.Sprintf("%x",asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,5}):
             fmt.Println("              Windows 硬件驱动程序验证 (",ExtKeyUsage,")")
         case fmt.Sprintf("%x",asn1.ObjectIdentifier{1,3,6,1,4,1,311,10,3,6}):
@@ -506,23 +511,20 @@ func main(){
 
     if(fmt.Sprintf("%x",dmcert.RawSubject) == fmt.Sprintf("%x",dmcert.RawIssuer)){
         fmt.Println("证书类别： 根证书\n")
-        CheckSign(dmcertPublicKey,dmcert.RawTBSCertificate,dmcert.SignatureAlgorithm,dmcert.Signature)
+        go CheckSign(dmcertPublicKey,dmcert.RawTBSCertificate,dmcert.SignatureAlgorithm,dmcert.Signature)
     }else{
         fmt.Println("证书类别： 非根证书\n")
         fmt.Println("证书链： ")
         CheckSign(GetSubPublicKey(dmcert.IssuingCertificateURL),dmcert.RawTBSCertificate,dmcert.SignatureAlgorithm,dmcert.Signature)
     }
-    fmt.Printf("证书状态： ")
+    fmt.Printf("证书状态：")
 
     //证书已过期，或者尚未生效。"
     if(time.Now().Before(dmcert.NotBefore) || time.Now().Before(dmcert.NotBefore)){
-       fmt.Println("该证书已过期，或者尚未生效。\n")  
+       fmt.Println("该证书已过期，或者尚未生效。")  
     }else{
-           if(CheckCRL(dmcert.SerialNumber,dmcert.CRLDistributionPoints)){
-        fmt.Printf("吊销状态异常，此证书已经被颁发机构吊销。\n")
-    }else{
-        fmt.Printf("证书正常\n")
-    }
+        CheckCRL(dmcert.SerialNumber,dmcert.CRLDistributionPoints)
+        CheckOCSP(dmcert.SerialNumber,dmcert.OCSPServer,dmcert)
     }
 
 
@@ -560,18 +562,78 @@ func main(){
 
 }
 
+//检查在线证书状态协议
+func CheckOCSP(certid *big.Int,OCSP_URL []string,dmcert *x509.Certificate)(CertIsok bool){
+    if(len(OCSP_URL) == 0  || OCSP_URL== nil){
+        fmt.Println("        OCSP无法检查吊销状态 |错误原因：证书扩展中没有OCSP URL地址~ ","\n")
+        return false
+    }
+    var cert,issuercert gox509.Certificate
+    cert.SerialNumber = certid
+    issuercert.RawSubjectPublicKeyInfo = dmcert.RawSubjectPublicKeyInfo
+    issuercert.RawSubject = dmcert.RawIssuer
+    reqByte,err := ocsp.CreateRequest(&cert,&issuercert,nil)
+    if err != nil {
+        fmt.Println("          OCSP无法检查吊销状态 |错误原因：Error Create the request: ", "\n")
+        return false
+    }
 
+    httpRequest, err2 := http.NewRequest(http.MethodPost, OCSP_URL[0], bytes.NewBuffer(reqByte))
+    if err2 != nil {
+        fmt.Println("          OCSP无法检查吊销状态 |错误原因：Error pre-post the request: ", "\n")
+        return false
+    } 
+    httpRequest.Header.Add("Content-Type", "application/ocsp-request")
+    httpRequest.Header.Add("Accept", "application/ocsp-response")
+
+    // 发送请求
+    httpClient := &http.Client{}
+    httpResponse, err3 := httpClient.Do(httpRequest)
+    if err3 != nil {
+        fmt.Println("          OCSP无法检查吊销状态 |错误原因：Error post the request: ", "\n")
+        return false
+    }
+    defer httpResponse.Body.Close()
+    // 读取响应
+    output, err4 := ioutil.ReadAll(httpResponse.Body)
+    if err4 != nil {
+        fmt.Println("          OCSP无法检查吊销状态 |错误原因：Error Reading the response: ", "\n")
+        return false
+    }
+    response,err5 := ocsp.ParseResponse(output,nil)
+    if err5 != nil {
+        fmt.Println("          OCSP无法检查吊销状态 |错误原因：Error Parsing the response: ", "\n")
+        return false
+    }
+    if(response.Status == 0){
+        fmt.Println("          证书正常。（OCSP）")
+        return true
+    }
+    if(response.Status == 1){
+        fmt.Println("          此证书已被颁发机构吊销。（OCSP）吊销时间：",response.RevokedAt,"原因:",response.RevocationReason)
+        return false
+    }
+    if(response.Status == 2){
+        fmt.Println("          证书未知。（OCSP）")
+        return false
+    }
+    
+    return false
+
+}
+
+//检查证书吊销列表
 func CheckCRL(certid *big.Int,CRL_URL []string)(CertIsok bool){
     if(len(CRL_URL) == 0  || CRL_URL== nil){
-        fmt.Println("无法验证吊销状态 |错误原因：证书扩展中没有证书吊销列表URL地址~ ","\n")
-        return
+        fmt.Println("CRL无法检查吊销状态 |错误原因：证书扩展中没有CRL URL地址~ ","\n")
+        return false
     }
     // 发起 HTTP GET 请求
     resp, err := http.Get(CRL_URL[0])
     if err != nil {
         // 如果请求失败，打印错误信息
-        fmt.Println("无法验证吊销状态 |错误原因：Error fetching the URL: ", err,"\n")
-        return
+        fmt.Println("CRL无法检查吊销状态 |错误原因：Error fetching the URL: ", "\n")
+        return false
     }
     defer resp.Body.Close()
 
@@ -579,8 +641,8 @@ func CheckCRL(certid *big.Int,CRL_URL []string)(CertIsok bool){
     contents, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         // 如果读取失败，打印错误信息
-        fmt.Println("无法验证吊销状态 |错误原因：Error reading the response: ", err,"\n")
-        return
+        fmt.Println("CRL无法检查吊销状态 |错误原因：Error reading the response: ","\n")
+        return false
     }
 
     crlBytespem := contents
@@ -595,16 +657,18 @@ func CheckCRL(certid *big.Int,CRL_URL []string)(CertIsok bool){
     // 解析CRL数据
     crl, err := x509.ParseCRL(crlBytes)
     if err != nil {
-        fmt.Println("无法验证吊销状态 |错误原因：Failed to parse CRL: %v", err,"\n")
-        return
+        fmt.Println("CRL无法检查吊销状态 |错误原因：Failed to parse CRL: ","\n")
+        return false
     }
 
     revokedCerts := crl.TBSCertList.RevokedCertificates
     for _, revokedCert := range revokedCerts {
         if(certid.Cmp(revokedCert.SerialNumber) ==0){
+            fmt.Println("此证书已被颁发机构吊销。（CRL） 吊销时间：",revokedCert.RevocationTime)
             return true
         }      
     }
+    fmt.Println("证书正常。（CRL）")
     return false
 }
 
@@ -613,12 +677,14 @@ func CheckCRL(certid *big.Int,CRL_URL []string)(CertIsok bool){
 func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     if(len(CRTurl) == 0  || CRTurl== nil){
         fmt.Println("验证签名： 无法验证签名 |错误原因：证书扩展中没有URL地址，无法找到上级证书链~ ","\n")
+        return nil
     }
     // 发起 HTTP GET 请求
     resp, err := http.Get(CRTurl[0])
     if err != nil {
         // 如果请求失败，打印错误信息
-        fmt.Println("验证签名： 失败 |错误原因：Error fetching the URL: ", err,"\n")
+        fmt.Println("验证签名： 失败 |错误原因：Error fetching the URL: ","\n")
+        return nil
     }
     defer resp.Body.Close()
 
@@ -626,7 +692,8 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     contents, err := ioutil.ReadAll(resp.Body)
     if err != nil {
         // 如果读取失败，打印错误信息
-        fmt.Println("验证签名： 失败 |错误原因：Error reading the response: ", err,"\n")
+        fmt.Println("验证签名： 失败 |错误原因：Error reading the response: ","\n")
+        return nil
     }
 
     caBytespem := contents
@@ -640,7 +707,8 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
 
     dmcacert,err5 := x509.ParseCertificate(caBytes)
     if (err5 != nil){
-        fmt.Println("解析CA证书失败：",err5)
+        fmt.Println("解析CA证书失败")
+        return nil
     }
 
     if(fmt.Sprintf("%x",dmcacert.RawSubject) != fmt.Sprintf("%x",dmcacert.RawIssuer)){
@@ -650,6 +718,7 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
         }else{
             fmt.Println(" 无法链接到可信根证书 | 错误原因：证书扩展中没有颁发者URL地址，无法找到CA的上级证书链。\n")
             fmt.Println("信任状态： 不可信 (由于无法找到上级证书链 或 Root 根证书不在“受信任的根证书颁发机构”存储区中，所以它不受信任。)\n") 
+            return nil
         }
         
     }else{
@@ -664,6 +733,7 @@ func GetSubPublicKey(CRTurl []string)(SubPublicKey interface{}){
     dmcaPublicKey,err3 := x509.ParsePKIXPublicKey(dmcacert.RawSubjectPublicKeyInfo)
     if err3 != nil {
         fmt.Println("解析CA公钥失败：",err3)
+        return nil
     }
     return dmcaPublicKey
 }

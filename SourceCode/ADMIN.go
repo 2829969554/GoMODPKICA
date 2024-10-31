@@ -315,7 +315,17 @@ if(MODML[1]=="signCERT" || MODML[1]=="signcert" || MODML[1]=="signcrt" || MODML[
 		fmt.Println("3:代码签名 4:电子邮件保护 5:IPSec端系统")
 		fmt.Println("6:IPSec隧道模式 7:IPSec用户模式 8:时间戳签名")
 		fmt.Println("9:OCSP响应签名 10:Microsoft服务器加密 11:Netscape服务器加密")
-		fmt.Println("12:Microsoft商业代码签名 13:Microsoft内核代码签名")
+		fmt.Println("12:Microsoft商业代码签名 13:Microsoft内核代码签名 14:Windows 硬件驱动程序验证")
+		fmt.Println("15:Windows 系统组件验证  16:OEM Windows 系统组件验证 17:内嵌 Windows 系统组件验证")
+		fmt.Println("18:域名系统(DNS)服务器信任  19:系统健康身份认证  20:已吊销列表签名者")
+		fmt.Println("21:KDC 身份认证  22:生存时间签名  23:私钥存档  24:合格的部署")
+		fmt.Println("25:密钥恢复  26:文档签名  27:Microsoft 时间戳  28:加密文件系统")
+		fmt.Println("29:密钥恢复代理  30:目录服务电子邮件复制  31:IP 安全 IKE 中级")
+		fmt.Println("32:文件恢复  33:根列表签名者  34:数字权利  35:CTL 用法")
+		fmt.Println("36:密钥数据包许可证  37:许可证服务器验证  38:证书申请代理")
+		fmt.Println("39:智能卡登录 40:智能卡验证 41:智能卡证书验证 42:智能卡信任使用")
+		fmt.Println("43:Apple CodeSing 代码签名  44:Apple Development CodeSing 开发者代码签名")
+		fmt.Println("45:Apple Resource Signing 资源签名  46:Apple Ichat Signing Ichat签名")
 		fmt.Print("请输入增强密钥用法(例如:1,2):")
 		fmt.Scanln(&exusage) 
 		 if strings.Contains(exusage, "12") || strings.Contains(exusage, "13") {
@@ -407,14 +417,22 @@ if(MODML[1]=="RevokeCERT" || MODML[1]=="revokeCERT" || MODML[1]=="revokecert" ||
 	  
 	 // 创建一个*Cmd对象，表示要执行的命令  
 	 cmd := exec.Command(MODAUTOEXE, args...)  
-	  
 	 // 运行命令并等待它完成  
 	 output, err := cmd.CombinedOutput()  
 	 if err != nil {  
 		 fmt.Println("命令执行出错:", err)  
 		 return  
 	 }  
-	  
+	 fmt.Println(string(output)) 
+	 
+	 // 创建一个*Cmd对象，表示要执行的命令  
+	 cmd = exec.Command(MODrootGETcrlEXE,"")  
+	 // 运行命令并等待它完成  
+	 output, err = cmd.CombinedOutput()  
+	 if err != nil {  
+		 fmt.Println("命令执行出错:", err)  
+		 return  
+	 }  	  
 	 // 打印命令的输出结果  
 	 fmt.Println(string(output))  
 
